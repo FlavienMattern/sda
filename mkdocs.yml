@@ -1,18 +1,52 @@
 site_name: SDA
 repo_url: https://github.com/FlavienMattern/sda.git
+
 theme:
   name: material
+
+  ### Palette configuration
+  palette:
+
+    # Palette toggle for light mode
+    - scheme: default
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/weather-night
+        name: Dark Mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/weather-sunny
+        name: Light Mode
+
+  ### Font configuration
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+  ### Features configuration
   features:
     - navigation.instant
     - navigation.instant.prefetch
     - navigation.path
+    - navigation.top
+    - navigation.footer
+    - toc.follow
     - toc.integrate
+    - search.suggest
 
 plugins:
   - search
   - mkdocstrings:
       default_handler: python
-            
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
 
 nav:
   - Home: index.md
@@ -21,7 +55,7 @@ nav:
       - sda.core.function1: core/function1.md
       - sda.core.inversion: core/inversion.md
   - sda.process:
-      - sda.process.method1: process/method1.md
+      - sda.process.xcorr_noise: process/xcorr_noise.md
       - sda.process.method2: process/method2.md
       - sda.process.method3: process/method3.md
 
