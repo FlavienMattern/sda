@@ -1,0 +1,27 @@
+site_name: SDA
+repo_url: https://github.com/FlavienMattern/sda.git
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.path
+    - toc.integrate
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+            
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - sda.core:
+      - sda.core.function1: core/function1.md
+      - sda.core.inversion: core/inversion.md
+  - sda.process:
+      - sda.process.method1: process/method1.md
+      - sda.process.method2: process/method2.md
+      - sda.process.method3: process/method3.md
+
