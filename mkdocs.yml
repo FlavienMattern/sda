@@ -43,6 +43,14 @@ plugins:
   - search
   - mkdocstrings:
       default_handler: python
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_toc_entry: false
+            merge_init_into_class: true
+            show_signature: true
+            show_docstring: true
 
 markdown_extensions:
   - pymdownx.highlight
