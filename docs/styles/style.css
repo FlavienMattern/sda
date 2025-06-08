@@ -1,4 +1,4 @@
 /* Make signature smaller */
-.highlight > * {
+code.highlight:not(pre code) {
     font-size: 0.7em;
 }
