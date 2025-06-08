@@ -1,4 +1,9 @@
-/* Make signature smaller */
+/* Make signature smaller */ 
 code.highlight:not(pre code) {
-    font-size: 0.7em;
+    font-size: 0.65em;
+    line-height: 0 !important;
+}
+
+.highlight .kc{
+    color: rgb(85, 129, 194);
 }
