@@ -1,0 +1,4 @@
+/* Make signature smaller */
+.highlight > * {
+    font-size: 0.7em;
+}

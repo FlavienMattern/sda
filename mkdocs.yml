@@ -49,12 +49,16 @@ plugins:
             show_source: true
             show_root_toc_entry: false
             merge_init_into_class: true
-            show_signature: true
-            show_docstring: true
+            extra:
+              show_signature: true
+              show_docstring: true
 
 markdown_extensions:
   - pymdownx.highlight
   - pymdownx.superfences
+
+extra_css:
+  - styles/style.css
 
 nav:
   - Home: index.md
