@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sda"
+version = "1.0.0"
+description = "Tools for seismological data analysis"
+authors = [
+    { name = "Flavien Mattern" }
+]
+readme = "README.md"
+requires-python = ">=3.9.18"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "numpy==1.23.5",
+    "scipy==1.13.0",
+    "obspy==1.4.0",
+    "geopandas==0.12.2",
+    "pandas==2.2.2",
+    "tqdm==4.66.2",
+    "geopy==2.4.1",
+    "matplotlib==3.8.4"
+]
+
+[project.urls]
+Homepage = "https://github.com/FlavienMattern/sda"
