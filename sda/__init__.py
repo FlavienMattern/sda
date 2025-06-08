@@ -21,3 +21,7 @@ from .create_events_catalog import create_events_catalog
 
 # Various functions
 from . import functions
+
+# New imports for process folder
+from . import process
+__all__ = ["process"]
