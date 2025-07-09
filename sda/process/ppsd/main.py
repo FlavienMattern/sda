@@ -1,5 +1,6 @@
 # Global modules
 import os
+import pandas as pd
 from obspy import read_inventory, read
 from obspy.signal import PPSD
 from tqdm import tqdm
@@ -16,6 +17,7 @@ import sda.functions.jobs as jb
 
 
 def save_ppsd(ppsd, folder, station):
+    if ppsd is None: return
     start = min(ppsd.current_times_used).datetime.strftime("%Y-%m-%d")
     end = max(ppsd.current_times_used).datetime.strftime("%Y-%m-%d")
     filename = os.path.join(folder, f"{station}_{start}_{end}.npz")
@@ -38,49 +40,67 @@ def init_ppsd(stream, inventory, parameters):
 def process_ppsd_station(station, parameters, queue):
     NET, STA, LOC, CHA = station.split(".")
     inventory = parameters["inventory"]
-    jobs = parameters["jobs"]
+    components = parameters["components"]
+    database_path = parameters["database_path"]
+    starttime = parameters["starttime"]
+    endtime = parameters["endtime"]
+    
+    if starttime is None or endtime is None:
+        db = database.filter(db_file=database_path, file_type="STREAM", station=f"^{STA}$")
+    else:
+        db = database.filter(db_file=database_path, file_type="STREAM", station=f"^{STA}$", start=starttime, end=endtime)
+    
+    db["STATION_FULLNAME"] = db["NETWORK"]+"."+db["STATION"]+"."+db["LOCATION"]+"."+db["CHANNEL"]
+    db["COMPONENT"] = db["CHANNEL"].str[-1]
+    db = db[db["COMPONENT"].isin(components)]
+    stations = list(set(db["STATION_FULLNAME"].values))
+    print(stations)
 
     # Extract all files for the station
-    jobsFilter = jobs.loc[jobs["STATION"] == station].sort_values(by="JOBID")
-    job_ids = jobsFilter["JOBID"]
-    
-    # Prepare output results
-    folder = os.path.join(parameters["output_path"], "ppsd", "PPSD", station)
-    if not os.path.isdir(folder): os.makedirs(folder)
-    
-    for idx, jobid in enumerate(tqdm(job_ids)):
-        f = jobsFilter.loc[jobsFilter["JOBID"] == jobid]["FILE"].values[0]
+    for st in stations:
+        df = db[db["STATION_FULLNAME"] == st]
+        df = df.sort_values(by='STARTTIME', ascending=True)
         
-        stream = read(f, sourcename=station)
-        inventorySub = inventory.select(network=NET, station=STA, location=LOC, channel=CHA)
-        stream.attach_response(inventorySub)
+        # Prepare output results
+        folder = os.path.join(parameters["output_path"], "ppsd", "PPSD", st)
+        if not os.path.isdir(folder): os.makedirs(folder)
+        files = df["FILE"]
         
-        ## Création de l'objet PPSD (header)
-        if idx == 0:
-            ppsd = init_ppsd(stream, inventorySub, parameters)
+        ppsd = None
         
-        ## Ajout du stream au PPSD
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+        for idx, f in enumerate(tqdm(files)):           
+            stream = read(f, sourcename=st)
             try:
-                ppsd.add(stream)
-                queue.put({"JOBID":jobid, "STATUS":"DONE"})
-                ### TO DO
-                ### Sometimes, this warning is raised here :
-                ### Already covered time spans detected (e.g. %s), skipping these slices.
-                ### --> Find a way to correct it if this is not expected
-                ### Also : this message appears : IOStream.flush timed out
-                ### --> Understand and correct the associated issue
-            except UserWarning as warn:
-                warn_msg = f"Warning : {warn}"
-                # Save current ppsd and create a new one
-                save_ppsd(ppsd, folder, station)
+                inventorySub = inventory.select(network=NET, station=STA, location=LOC, channel=CHA)
+                stream.attach_response(inventorySub)
+            except:
+                continue
+            
+            ## Création de l'objet PPSD (header)
+            if ppsd is None:
                 ppsd = init_ppsd(stream, inventorySub, parameters)
-                ppsd.add(stream)
-                queue.put({"JOBID":jobid, "STATUS":"DONE"})
-
-                
-    save_ppsd(ppsd, folder, station)
+            
+            ## Ajout du stream au PPSD
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                try:
+                    ppsd.add(stream)
+                    # queue.put({"JOBID":jobid, "STATUS":"DONE"})
+                    ### TO DO
+                    ### Sometimes, this warning is raised here :
+                    ### Already covered time spans detected (e.g. %s), skipping these slices.
+                    ### --> Find a way to correct it if this is not expected
+                    ### Also : this message appears : IOStream.flush timed out
+                    ### --> Understand and correct the associated issue
+                except UserWarning as warn:
+                    warn_msg = f"Warning : {warn}"
+                    # Save current ppsd and create a new one
+                    save_ppsd(ppsd, folder, st)
+                    ppsd = init_ppsd(stream, inventorySub, parameters)
+                    ppsd.add(stream)
+                    # queue.put({"JOBID":jobid, "STATUS":"DONE"})
+       
+        save_ppsd(ppsd, folder, st)
     
     
     
