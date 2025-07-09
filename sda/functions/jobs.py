@@ -10,16 +10,17 @@ import sda.functions.database as database
 
 
 # Initialisation de la table de jobs
-def create_job_table(databasePath, tableName, columns):
+def create_job_table(database_path, tableName, columns):
     
     content = f"""
         CREATE TABLE IF NOT EXISTS {tableName} (
-            ID  INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-            {''.join([f'{elt} TEXT,' if (idx!=len(columns)-1) else f'{elt} TEXT' for idx, elt in enumerate(columns)])}
+            ID  INTEGER PRIMARY KEY AUTOINCREMENT,
+            {''.join([f'{elt} TEXT,' if (idx!=len(columns)-1) else f'{elt} TEXT' for idx, elt in enumerate(columns)])},
+            UNIQUE ({', '.join(columns[:-1])})
         )
     """
     
-    with sqlite3.connect(databasePath) as conn:
+    with sqlite3.connect(database_path) as conn:
         cursor = conn.cursor()
         cursor.execute(content)
         conn.commit()
@@ -41,10 +42,10 @@ def insert_job(connection, tableName, row):
         
         
 def insert_job_queue(queue, parameters):
-    databasePath = parameters["databasePath"]
+    database_path = parameters["database_path"]
     tableName = parameters["tableName"]
     
-    connection = sqlite3.connect(databasePath)
+    connection = sqlite3.connect(database_path)
     cursor = connection.cursor()
     
     while True:
@@ -54,8 +55,7 @@ def insert_job_queue(queue, parameters):
         query = f"""
                 UPDATE {tableName}
                 SET
-                    STATUS = '{record["STATUS"]}',
-                    COMMENT = '{record["COMMENT"]}'
+                    STATUS = '{record["STATUS"]}'
                 WHERE JOBID = '{record["JOBID"]}';
             """
         # print(query)
@@ -65,13 +65,12 @@ def insert_job_queue(queue, parameters):
         
         
         
-def update_status(databasePath, tableName, jobid, status, comment=""):
-    with sqlite3.connect(databasePath) as connection:
+def update_status(database_path, tableName, jobid, status, comment=""):
+    with sqlite3.connect(database_path) as connection:
         connection.execute(f"""
                 UPDATE {tableName}
                 SET
                     STATUS = '{status}',
-                    COMMENT = '{comment}',
                 WHERE JOBID = '{jobid}';
             """
         )
