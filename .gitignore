@@ -59,4 +59,5 @@ Thumbs.db
 **/__pycache__
 **/logs
 **/test
+
 .fuse_hidden*
