@@ -12,29 +12,40 @@ import numpy as np
 import pickle as pkl
 from datetime import datetime, timedelta
 import sqlite3
-import geopandas as gpd
 import pandas as pd
 import re
 import streamlit as st
 import tempfile
+
+
+def is_loaded():
+    return st.session_state.get("database_loaded")
+
 
 def get_db_infos(file):
 
     if file is not None:
 
         # st.success("Database loaded ! You can now explore the data.")
-        st.session_state["db_loaded"] = True
-        st.session_state["db_filename"] = file.name
-        st.session_state["db_filesize"] = file.size
+        st.session_state["database_loaded"] = True
+        
+        st.session_state["database"] = {
+            "settings" : {
+                "filename": file.name,
+                "filesize": file.size
+                },
+            "content" : None
+        }
+
         if file.size == 0:
-            st.session_state["db_filesize_str"] = file.size
+            st.session_state["database"]["settings"]["filesize_str"] = file.size
         else:
             units = ["o", "ko", "Mo", "Go", "To", "Po"]
             i = 0
             while file.size >= 1024 and i < len(units) - 1:
                 file.size /= 1024
                 i += 1
-            st.session_state["db_filesize_str"] = f"{file.size:.1f} {units[i]}"
+            st.session_state["database"]["settings"]["filesize_str"] = f"{file.size:.1f} {units[i]}"
 
         # Créer une base SQLite temporaire (en mémoire ou fichier)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".db") as tmp:
@@ -60,32 +71,25 @@ def get_db_infos(file):
 
             conn.close()
 
-            st.session_state["db_nfiles"] = len(df)
-            st.session_state["db_content"] = dfs
+            st.session_state["database"]["settings"]["nfiles"] = len(df)
+            st.session_state["database"]["content"] = dfs
 
         st.rerun()
 
 
-
 def status_sidebar():
 
-    if st.session_state.get("db_loaded") is True:
+    if is_loaded():
         st.sidebar.success(f"✅ Database loaded !")
 
     else:
         st.sidebar.error("❌ Database not loaded !")
 
-        uploaded_file = st.sidebar.file_uploader(
-            "Select Database File", accept_multiple_files=False, type=["db", "sql"], label_visibility="collapsed",
-        )
-    
-        get_db_infos(uploaded_file)
-
 
 def status():
 
-    if not st.session_state.get("db_loaded") is True:
-        st.error("❌ Database not loaded ! Please load the database using the left sidebar.")
+    if not is_loaded():
+        st.error("❌ Database not loaded ! Please load the database in the Dashboard.")
 
         
     

@@ -7,14 +7,27 @@ st.divider()
 # Database status and loading
 database.status()
 
-if st.session_state.get("db_loaded") is True:
+
+
+if database.is_loaded():
+
 
     
+    row = st.columns(3)
 
-    # df = st.session_state.get("db_dataframe")
-    # st.dataframe(df, use_container_width=True)
+    #### Container 1 - Number of files
+    tile = row[0].container()
+    tile.title(":material/stacks: Number of files")
+    tile.info(f"**{st.session_state.get('database')['settings']['nfiles']} files** in the database.")
+    ####################################
 
-    db_content = st.session_state.get("db_content")
+    #### Container 2 - Number of files
+    tile = row[1].container()
+    tile.title(":material_folder_zip: Database Size")
+    tile.info(f"**{st.session_state.get('database')['settings']['filesize_str']}**")
+    ####################################
+
+    db_content = st.session_state.get("database")["content"]
     keys = list(db_content.keys())
     keys.remove("sqlite_sequence")
 
@@ -23,5 +36,7 @@ if st.session_state.get("db_loaded") is True:
     for idx, tab in enumerate(tabs):
         placeholder = st.empty()
         placeholder.info("Loading database...")
-        tab.dataframe(db_content[keys[idx]], use_container_width=True)
+        df = db_content[keys[idx]]
+        if "ID" in df.columns: df.set_index("ID", inplace=True)
+        tab.dataframe(df, use_container_width=True)
         placeholder.empty()

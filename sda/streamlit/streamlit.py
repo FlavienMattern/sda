@@ -1,6 +1,11 @@
 import streamlit as st
 from sda.streamlit.functions import db_utils as database
+from sda.streamlit.functions import session
 
+# Initiate Empty Session
+st.session_state["database"] = {}
+st.session_state["session"] = {}
+if "tmp" not in st.session_state.keys(): st.session_state["tmp"] = {}
             
 # General Configuration
 st.set_page_config(
@@ -14,16 +19,12 @@ st.set_page_config(
         'About': "# This is a header. This is an *extremely* cool app!"
     }
 )
-
-
-# Database status and loading
-database.status_sidebar()
         
 
 # Setup Navigation bar
 pages = {
     "Home": [
-        st.Page("pages/dashboard.py", title="Dashboard", icon=":material/home:", default=True),
+        st.Page("pages/dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True),
     ],
     "Data Viewer": [
         st.Page("pages/database.py", title="Database Explorer", icon=":material/database:"),
@@ -34,6 +35,10 @@ pages = {
 }
 pg = st.navigation(pages, position="sidebar")
 
+# Database status and loading
+database.status_sidebar()
+        
+    
 
 # Run webpage
 pg.run()
