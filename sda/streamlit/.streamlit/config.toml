@@ -1,0 +1,12 @@
+[client]
+toolbarMode = "viewer"
+
+[server]
+maxUploadSize = 10000
+maxMessageSize = 10000
+showEmailPrompt = false
+runOnSave = true
+port = 8501
+
+[browser]
+gatherUsageStats = false

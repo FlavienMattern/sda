@@ -54,7 +54,6 @@ def process_ppsd_station(station, parameters, queue):
     db["COMPONENT"] = db["CHANNEL"].str[-1]
     db = db[db["COMPONENT"].isin(components)]
     stations = list(set(db["STATION_FULLNAME"].values))
-    print(stations)
 
     # Extract all files for the station
     for st in stations:
@@ -138,10 +137,10 @@ def ppsd(
     divide_files = None, # day, month, year, None
     ppsd_length = 1800,
     overlap = 0.0,
-    period_smoothing_width_octaves = 0.025,
-    period_step_octaves = 0.0125,
-    period_limits = (1/100, 50),
-    db_bins = (-200, 20, 0.25)
+    period_smoothing_width_octaves = 0.08,
+    period_step_octaves = 0.02,
+    period_limits = (1/50, 50),
+    db_bins = (-200, -50, 0.25)
 ):
     """
     Process PPSD (Probabilistic Power Spectral Density) for seismic data.

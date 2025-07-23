@@ -25,7 +25,8 @@ dependencies = [
     "pandas==2.2.2",
     "tqdm==4.66.2",
     "geopy==2.4.1",
-    "matplotlib==3.8.4"
+    "streamlit==1.47.0",
+    "streamlit-elements==0.1.0"
 ]
 
 [project.urls]
