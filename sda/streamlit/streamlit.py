@@ -28,19 +28,13 @@ database.status_sidebar()
 if database.is_loaded():
 
     if not session.is_in_session():
-        print("no session loaded")
         sessions = session.get_sessions_list()
         if sessions is not None:
             sessions = sessions.sort_values("last_used", ascending=False)
             session_idx = sessions.index[0]
             session_name = sessions[sessions.index == session_idx].session_name.values[0]
-
-            print(f"Load default session : {session_name} ({session_idx})")
-
             session.load(session_idx)
         else:
-
-            print(f"Create default session : Default (0)")
             session.create("Default")
 
     session.status_sidebar()
