@@ -36,5 +36,5 @@ if database.is_loaded():
         placeholder.info("Loading database...")
         df = db_content[keys[idx]]
         if "ID" in df.columns: df.set_index("ID", inplace=True)
-        tab.dataframe(df, use_container_width=True)
+        tab.dataframe(df, use_container_width=True, height=800)
         placeholder.empty()
