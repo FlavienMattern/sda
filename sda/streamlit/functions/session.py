@@ -1,36 +1,187 @@
 import streamlit as st
+import pandas as pd
+import os
+import pickle as pkl
+from datetime import datetime
+import shutil
 
 def is_in_session():
-    a = len(st.session_state.get("session").keys()) > 0
-    print(st.session_state.get("session").keys())
-    return a
+    if "session" in st.session_state.keys():
+        return len(st.session_state.get("session").keys()) > 0
+    else:
+        return False
 
-@st.dialog("Create a Session")
-def create_session():
-    st.info(f"No session loaded. Do you want to create a new session ? This name allows you to find the name of your session the next time it is loaded.")
-    session_name = st.text_input("Enter a session name :")
-    if st.button("Apply and save session"):
-        st.session_state["session"]["settings"] = {
-                "name": session_name,
-                "id": 0,
-                "filename": f"streamlit/{session_name}.pkl"
-            }
-        st.rerun()
+
+def status_sidebar():
+    if is_in_session():
+        st.sidebar.info(f":material/web: Session : **{st.session_state.get('session')['settings']['name']}**")
+
+    else:
+        st.sidebar.info(":material/web: No session loaded.")
+
+
+def get_sessions_list():
+
+    try:
+        sessions = pd.read_csv(os.path.join(st.session_state.get("database")["settings"]["wdir"], "streamlit", "sessions.txt"), delimiter=",")
+        sessions.set_index("id", inplace=True)
+        st.session_state["all_sessions"] = sessions
+        return sessions
+    except:
+        return None
+
+
+def save_sessions_list(update_current_session_date=True):
+
+    wdir = st.session_state.get("database")["settings"]["wdir"]
+    sessions = st.session_state.get("all_sessions")
+
+    if update_current_session_date:
+        session_id = st.session_state.get("session")["settings"]["id"]
+        sessions.loc[session_id, 'last_used'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    sessions.to_csv(os.path.join(wdir, "streamlit", "sessions.txt"))
+
+
+def load(id):
+
+    sessions = get_sessions_list()
+    session_name = sessions[sessions.index == id].session_name.values[0]
+    wdir = st.session_state.get("database")["settings"]["wdir"]
+
+    session_file = os.path.join(wdir, "streamlit", f"session_{id:03d}", "session.info")
+
+    with open(session_file, "rb") as f:
+        session_dict = pkl.load(f)
+
+    st.session_state["session"] = session_dict
 
 
 def save():
     
+    wdir = st.session_state.get("database")["settings"]["wdir"]
     session_dict = st.session_state.get("session")
-    session_name = session_dict["name"]
-    session_id = session_dict["id"]
-    session_filename = session_dict["filename"]
-    
-    st.sidebar.divider()
-    
-    if session_name == "No session loaded":
-        create_session()
-    else:
-        st.sidebar.write("Saving current session")
-        st.sidebar.write(f"Session Name : {session_name}")
-        st.sidebar.write(f"Session ID : {session_id}")
-        st.sidebar.write(f"Saved as : {session_filename}")
+    session_name = session_dict["settings"]["name"]
+    session_id = session_dict["settings"]["id"]
+    session_folder = session_dict["settings"]["folder"]
+
+    save_folder = os.path.join(wdir, session_folder)
+    save_file = os.path.join(save_folder, "session.info")
+
+    os.makedirs(save_folder, exist_ok=True)
+    with open(save_file, "wb") as f:
+        pkl.dump(session_dict, f)
+
+    save_sessions_list()
+
+
+def clean():
+
+    id = st.session_state.get("session")["settings"]["id"]
+
+    session_dict = {
+        "settings": {
+            "name": st.session_state.get("session")["settings"]["name"],
+            "id": id,
+            "folder": f"streamlit/session_{id:03d}"
+        },
+        "content": None
+    }
+
+    st.session_state["session"] = session_dict
+
+    wdir = st.session_state.get("database")["settings"]["wdir"]
+    session_dict = st.session_state.get("session")
+    session_folder = session_dict["settings"]["folder"]
+    rm_folder = os.path.join(wdir, session_folder)
+    try:
+        shutil.rmtree(rm_folder)
+    except:
+        pass
+
+    save()
+    st.rerun()
+
+
+@st.dialog(":material/warning: Caution !")
+def clean_check():
+    session_name = st.session_state.get("session")["settings"]["name"]
+    st.warning(f":material/warning: You are about to clean you current session : **{session_name}**. You will loose all information in this session. Close this popup if it was a mistake.")
+    if st.button(":material/check: Clean Session"):
+        clean()
+
+
+def remove(id):
+    sessions = get_sessions_list()
+    sessions = sessions.drop(id)
+    st.session_state["all_sessions"] = sessions
+
+    if id == st.session_state.get("session")["settings"]["id"]:
+        load(0)
+
+    wdir = st.session_state.get("database")["settings"]["wdir"]
+    rm_folder = os.path.join(wdir, "streamlit", f"session_{id:03d}")
+    try:
+        shutil.rmtree(rm_folder)
+    except:
+        pass
+
+    save_sessions_list(update_current_session_date=False)
+    st.rerun()
+
+
+@st.dialog(":material/warning: Caution !")
+def remove_check(id):
+    session_name = st.session_state.get("session")["settings"]["name"]
+    st.warning(f":material/warning: You are about to permanently remove the session : **{session_name}**. You will loose all information in this session. Close this popup if it was a mistake.")
+    if st.button(":material/check: Remove Session"):
+        remove(id)
+
+
+def create(name):
+
+    if name not in ["", " ", "  ", "Select a session"]:
+            
+        sessions = get_sessions_list()
+        if sessions is None:
+            sessions = pd.DataFrame({
+                'session_name': [],
+                'session_folder': [],
+                'last_used': []
+            })
+            sessions.index.name = 'id'
+
+        if name not in list(sessions["session_name"]):
+
+            if len(sessions) == 0:
+                id = 0
+            else:
+                id = max(list(sessions.index)) + 1
+
+            session_dict = {
+                "settings": {
+                    "name": name,
+                    "id": id,
+                    "folder": f"streamlit/session_{id:03d}"
+                },
+                "content": None
+            }
+
+            st.session_state["session"] = session_dict
+
+            wdir = st.session_state.get("database")["settings"]["wdir"]
+            save_folder = os.path.join(wdir, "streamlit", f"session_{id:03d}")
+            save_file = os.path.join(save_folder, "session.info")
+
+            
+
+            os.makedirs(save_folder, exist_ok=True)
+            with open(save_file, "wb") as f:
+                pkl.dump(session_dict, f)
+
+            sessions.loc[id] = [name, f"session_{id:03d}", datetime.now().strftime("%Y-%m-%d %H:%M:%S")]
+            st.session_state["all_sessions"] = sessions
+            save_sessions_list()
+
+            st.rerun()
+            

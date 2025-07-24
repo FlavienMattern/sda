@@ -10,8 +10,6 @@ database.status()
 
 
 if database.is_loaded():
-
-
     
     row = st.columns(3)
 

@@ -19,7 +19,11 @@ import tempfile
 
 
 def is_loaded():
-    return st.session_state.get("database_loaded")
+    if "content" in st.session_state.get("database").keys():
+        if st.session_state.get("database")["content"] is not None :
+            return True
+        return False
+    return False
 
 
 def get_db_infos(file):
@@ -32,7 +36,8 @@ def get_db_infos(file):
         st.session_state["database"] = {
             "settings" : {
                 "filename": file.name,
-                "filesize": file.size
+                "filesize": file.size,
+                "wdir": "/media/flavien/Seagate Hub/alsace" # TO CHANGE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 },
             "content" : None
         }
