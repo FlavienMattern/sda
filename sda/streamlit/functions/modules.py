@@ -58,5 +58,5 @@ def map_stations(tile, inventory, lat_col="Latitude", lon_col="Longitude"):
         tooltip={"text": "{Network}.{Station}\n({Longitude},{Latitude},{Elevation})\n{Channels}"},
     )
 
-    event = tile.pydeck_chart(chart, on_select="rerun", selection_mode="single-object")
+    event = tile.pydeck_chart(chart, on_select="rerun", selection_mode="multi-object")
     event.selection

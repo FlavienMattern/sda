@@ -97,7 +97,11 @@ def status():
         st.error("❌ Database not loaded ! Please load the database in the Dashboard.")
 
         
-    
+def get_db_content(key):
+    return st.session_state["database"]["content"][key]
+
+def get_db_keys():
+    return list(st.session_state["database"]["content"].keys())
 
 
 ####################################################

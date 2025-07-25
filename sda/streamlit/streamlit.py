@@ -60,7 +60,7 @@ nav_general_pages = {
         st.Page("pages/database.py", title="Database Explorer", icon=":material/database:"),
         st.Page("pages/station_map.py", title="Map Explorer", icon=":material/map:"),
         st.Page("pages/availability.py", title="Data Availability", icon=":material/view_timeline:"),
-        st.Page("pages/process1.py", title="Process 1", icon=":material/analytics:"),
+        st.Page("pages/waveforms.py", title="Waveform Viewer", icon=":material/vital_signs:"),
         st.Page("pages/process2.py", title="Process 2", icon=":material/browse_activity:"),
     ]
 }
