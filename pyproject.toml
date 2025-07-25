@@ -26,7 +26,8 @@ dependencies = [
     "tqdm==4.66.2",
     "geopy==2.4.1",
     "streamlit==1.47.0",
-    "streamlit-elements==0.1.0"
+    "streamlit-elements==0.1.0",
+    "plotly==6.2.0"
 ]
 
 [project.urls]
