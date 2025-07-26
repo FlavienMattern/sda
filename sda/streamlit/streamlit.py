@@ -6,6 +6,7 @@ import os
 
 # Initiate Empty Session
 if "database" not in st.session_state.keys(): st.session_state["database"] = {}
+if "tmp" not in st.session_state.keys(): st.session_state["tmp"] = {}
             
 # General Configuration
 st.set_page_config(
@@ -48,13 +49,28 @@ if database.is_loaded():
     last_save = sessions[sessions.index == session_idx].last_used.values[0]
     st.sidebar.caption(f"Last save : {last_save}")
 
+    if st.sidebar.toggle("Developer Mode", key=f"dev_mode", value=False):
+        st.session_state["session"]["settings"]["dev_mode"] = True
+    else:
+        st.session_state["session"]["settings"]["dev_mode"] = False
+
+
 
 # Setup Navigation bar
-nav_default_pages = {
-    "Home": [
-        st.Page("pages/dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True),
-    ]
-}
+if not session.is_dev_mode():
+    nav_default_pages = {
+        "Home": [
+            st.Page("pages/dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True),
+        ]
+    }
+else:
+    nav_default_pages = {
+        "Home": [
+            st.Page("pages/dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True),
+            st.Page("pages/sandbox.py", title="[DEV] Sandbox", icon=":material/experiment:"),
+        ]
+    }
+    
 nav_general_pages = {
     "Data Viewer": [
         st.Page("pages/database.py", title="Database Explorer", icon=":material/database:"),
