@@ -3,20 +3,25 @@ import pydeck
 from sda.streamlit.functions import map_utils
 
 
+def list():
+    return {
+        "dataframe_stations": "Stations Metadata",
+        "map_stations": "Station Map",
+    }
 
-def dataframe_stations(tile, inventory):
+def dataframe_stations(inventory):
     """Container with a dataframe of all seismic stations and metadata
 
     Args:
         tile (_type_): The streamlit containter
         inventory (_type_): A DataFrame object containing stations metadata
     """
-    tile.title(":material/data_table: Station Metadata")
-    tile.dataframe(inventory, height=800)
+    st.title(":material/data_table: Station Metadata")
+    st.dataframe(inventory, height=800)
 
 
 
-def map_stations(tile, inventory, lat_col="Latitude", lon_col="Longitude"):
+def map_stations(inventory, lat_col="Latitude", lon_col="Longitude"):
     """Container with a map of seismic stations.
 
     Args:
@@ -26,7 +31,7 @@ def map_stations(tile, inventory, lat_col="Latitude", lon_col="Longitude"):
         lon_col (str, optional): DataFrame column with longitudes. Defaults to "Longitude".
     """
     
-    tile.title(":material/map_search: Station Map")
+    st.title(":material/map_search: Station Map")
 
     stations_layer = pydeck.Layer(
         "ScatterplotLayer",
@@ -58,5 +63,5 @@ def map_stations(tile, inventory, lat_col="Latitude", lon_col="Longitude"):
         tooltip={"text": "{Network}.{Station}\n({Longitude},{Latitude},{Elevation})\n{Channels}"},
     )
 
-    event = tile.pydeck_chart(chart, on_select="rerun", selection_mode="multi-object")
+    event = st.pydeck_chart(chart, on_select="rerun", selection_mode="multi-object")
     event.selection
