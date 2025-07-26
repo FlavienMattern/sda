@@ -1,13 +1,18 @@
+page_title = ":material/vital_signs: Waveform Viewer"
+
 from sda.streamlit.functions import db_utils as database
 from sda.streamlit.functions import modules
+from sda.streamlit.functions import page
 import streamlit as st
 
-st.title(":material/vital_signs: Waveform Viewer")
-st.divider()
 database.status()
 
 if database.is_loaded():
-    ########### Prepare Data ###########
+    
+    # Load page
+    p = page.Page(page_title, visible=True, removable=False, default_page=True)
+
+    # Page Content
 
     import pickle as pkl
     import pandas as pd
@@ -18,6 +23,15 @@ if database.is_loaded():
     import numpy as np
     # import altair as alt
     # alt.theme.enable('quartz')
+
+    inventory_file = "/media/flavien/WORK/these/tools/inventory_alsace.pkl"
+                    
+    with open(inventory_file, "rb") as f:
+        inventory = pkl.load(f)
+
+    inventory = pd.DataFrame(inventory)
+    inventory = inventory.drop(columns=["geometry"])
+    inventory['Channels'] = inventory['Channels'].apply(lambda x: list(dict.fromkeys(x)))
     
     net = "FR"
     sta = "HOHE"
@@ -63,11 +77,20 @@ if database.is_loaded():
         "y2" : -stream[0].data[::10]
     })
     data.set_index("Time", inplace=True)
+
+
+    row = st.columns(1)
+    tile = row[0]
     
-    with st.container(border=True):
-        st.button(":material/dehaze:")
-        st.button(":material/arrow_menu_open:")
-        st.button(":material/arrow_menu_close:")
+    with tile.container(border=True):
+
+        cols = st.columns(3)
+        with cols[0]:
+            st.button(":material/dehaze:", use_container_width=False)
+        with cols[1]:
+            st.button(":material/arrow_menu_open:", use_container_width=False)
+        with cols[2]:
+            st.button(":material/arrow_menu_close:", use_container_width=False)
         
         placeholder = st.empty()
         placeholder.write("Loading Waveform...")
@@ -86,3 +109,5 @@ if database.is_loaded():
         st.plotly_chart(fig, config = {'scrollZoom': True})
 
         placeholder.empty()
+
+    st.write(st.session_state)

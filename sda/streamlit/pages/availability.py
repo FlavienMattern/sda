@@ -1,11 +1,15 @@
+page_title = ":material/view_timeline: Data Availability"
+
 from sda.streamlit.functions import db_utils as database
+from sda.streamlit.functions import modules
+from sda.streamlit.functions import page
 import streamlit as st
 
-st.title(":material/view_timeline: Data Availability")
-st.divider()
-
-# Database status and loading
 database.status()
 
 if database.is_loaded():
-    pass
+    
+    # Load page
+    p = page.Page(page_title, visible=True, removable=False, default_page=True)
+
+    # Page Content

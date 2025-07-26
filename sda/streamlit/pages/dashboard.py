@@ -1,9 +1,13 @@
-import streamlit as st
+page_title = ":material/dashboard: Dashboard"
+
 from sda.streamlit.functions import db_utils as database
+from sda.streamlit.functions import modules
 from sda.streamlit.functions import session
+from sda.streamlit.functions import page
+import streamlit as st
 import pandas as pd
 
-st.title(":material/dashboard: Dashboard")
+st.title(page_title)
 st.divider()
 
 row = st.columns(3)

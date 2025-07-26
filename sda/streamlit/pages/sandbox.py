@@ -1,16 +1,15 @@
-page_title = ":material/map: Map Explorer"
+page_title = ":material/experiment: [DEV] Sandbox"
 
 from sda.streamlit.functions import db_utils as database
 from sda.streamlit.functions import modules
+from sda.streamlit.functions import session
+from sda.streamlit.functions import tmp
 from sda.streamlit.functions import page
 import streamlit as st
 
 database.status()
 
 if database.is_loaded():
-    
-    # Load page
-    p = page.Page(page_title, visible=True, removable=False, default_page=True, init_tabs=False)
 
     # Page Content
     import pickle as pkl
@@ -25,14 +24,10 @@ if database.is_loaded():
     inventory = inventory.drop(columns=["geometry"])
     inventory['Channels'] = inventory['Channels'].apply(lambda x: list(dict.fromkeys(x)))
 
+    tmp.set("stations_inventory", inventory)
+    
+    # Load page
+    p = page.Page(page_title, visible=True, removable=False, default_page=True)
 
 
-    ########### Configure Layout ###########
-
-    row = st.columns([0.5, 0.5])
-
-    tile = row[0].container()
-    modules.map_stations(inventory)
-
-    tile = row[1].container()
-    modules.dataframe_stations(inventory)
+    
