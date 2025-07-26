@@ -68,6 +68,9 @@ def save():
     save_folder = os.path.join(wdir, session_folder)
     save_file = os.path.join(save_folder, "session.info")
 
+    st.write("Save session :")
+    st.write(session_dict)
+
     os.makedirs(save_folder, exist_ok=True)
     with open(save_file, "wb") as f:
         pkl.dump(session_dict, f)
@@ -162,6 +165,7 @@ def create(name):
                 "settings": {
                     "name": name,
                     "id": id,
+                    "dev_mode": False,
                     "folder": f"streamlit/session_{id:03d}"
                 },
                 "content": None
@@ -184,4 +188,8 @@ def create(name):
             save_sessions_list()
 
             st.rerun()
+
+
+def is_dev_mode():
+    return st.session_state.get("session")["settings"]["dev_mode"]
             
