@@ -8,7 +8,7 @@ You can run the following commands to install all necessary packages :
 ```
 conda create --name sda python=3.9.18
 conda activate sda
-git clone https://github.com/FlavienMattern/sda.git
+git clone git@github.com:FlavienMattern/sda.git
 cd sda
 pip install -e .
 ```
