@@ -68,9 +68,6 @@ def save():
     save_folder = os.path.join(wdir, session_folder)
     save_file = os.path.join(save_folder, "session.info")
 
-    st.write("Save session :")
-    st.write(session_dict)
-
     os.makedirs(save_folder, exist_ok=True)
     with open(save_file, "wb") as f:
         pkl.dump(session_dict, f)

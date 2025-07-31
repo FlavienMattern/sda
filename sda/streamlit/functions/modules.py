@@ -2,6 +2,8 @@ import streamlit as st
 import pydeck
 from sda.streamlit.functions import map_utils
 
+def run(id):
+    pass
 
 def list():
     return {
@@ -16,7 +18,7 @@ def dataframe_stations(inventory):
         tile (_type_): The streamlit containter
         inventory (_type_): A DataFrame object containing stations metadata
     """
-    st.title(":material/data_table: Station Metadata")
+    st.subheader(":material/data_table: Station Metadata")
     st.dataframe(inventory, height=800)
 
 
@@ -31,7 +33,7 @@ def map_stations(inventory, lat_col="Latitude", lon_col="Longitude"):
         lon_col (str, optional): DataFrame column with longitudes. Defaults to "Longitude".
     """
     
-    st.title(":material/map_search: Station Map")
+    st.subheader(":material/map_search: Station Map")
 
     stations_layer = pydeck.Layer(
         "ScatterplotLayer",

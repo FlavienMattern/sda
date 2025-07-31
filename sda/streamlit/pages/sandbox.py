@@ -27,7 +27,8 @@ if database.is_loaded():
     tmp.set("stations_inventory", inventory)
     
     # Load page
-    p = page.Page(page_title, visible=True, removable=False, default_page=True)
+    p = page.Page(page_title)
+    # p = page.Page(page_title, visible=True, removable=False, default_page=True)
 
 
     

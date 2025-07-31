@@ -57,19 +57,12 @@ if database.is_loaded():
 
 
 # Setup Navigation bar
-if not session.is_dev_mode():
-    nav_default_pages = {
-        "Home": [
-            st.Page("pages/dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True),
-        ]
-    }
-else:
-    nav_default_pages = {
-        "Home": [
-            st.Page("pages/dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True),
-            st.Page("pages/sandbox.py", title="[DEV] Sandbox", icon=":material/experiment:"),
-        ]
-    }
+nav_default_pages = {
+    "Home": [
+        st.Page("pages/dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True),
+        st.Page("pages/sandbox.py", title="[DEV] Sandbox", icon=":material/experiment:"),
+    ]
+}
     
 nav_general_pages = {
     "Data Viewer": [
