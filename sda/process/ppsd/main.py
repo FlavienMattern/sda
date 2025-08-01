@@ -68,8 +68,8 @@ def process_ppsd_station(station, parameters, queue):
         ppsd = None
         
         for idx, f in enumerate(tqdm(files)):           
-            stream = read(f, sourcename=st)
             try:
+                stream = read(f, sourcename=st)
                 inventorySub = inventory.select(network=NET, station=STA, location=LOC, channel=CHA)
                 stream.attach_response(inventorySub)
             except:
@@ -99,11 +99,11 @@ def process_ppsd_station(station, parameters, queue):
                     ppsd.add(stream)
                     # queue.put({"JOBID":jobid, "STATUS":"DONE"})
        
-        save_ppsd(ppsd, folder, st)
-    
-    
-    
-def PPSDPoolHandler(stations, parameters):  
+        if ppsd is not None:
+            save_ppsd(ppsd, folder, st)
+
+
+def PPSDPoolHandler(stations, parameters):
     # Define queue to update database in parallel
     manager = multiprocessing.Manager()
     queue = manager.Queue()
