@@ -114,8 +114,8 @@ def PPSDPoolHandler(stations, parameters):
     PPSDParallelWithConfig = partial(process_ppsd_station, parameters=parameters, queue=queue)
     # Create Pool with a progress bar
     with multiprocessing.Pool(processes=parameters["n_cores"]) as p:
-        with tqdm(total=len(stations)) as pbar:
-            pbar.set_description("PPSD   ")
+        with tqdm(total=len(stations), bar_format="{l_bar}{bar:30}{r_bar}") as pbar:
+            pbar.set_description("Computing PPSDs")
             for _ in p.imap_unordered(PPSDParallelWithConfig, stations):
                 pbar.update()
                 
