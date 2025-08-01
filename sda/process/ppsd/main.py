@@ -8,7 +8,7 @@ import multiprocessing
 from functools import partial
 import sqlite3
 import warnings
-warnings.filterwarnings("error")
+warnings.filterwarnings("ignore")
 
 # Local modules
 import sda.functions.database as database
@@ -62,7 +62,7 @@ def process_ppsd_station(station, parameters, queue):
         
         # Prepare output results
         folder = os.path.join(parameters["output_path"], "ppsd", "PPSD", st)
-        if not os.path.isdir(folder): os.makedirs(folder)
+        os.makedirs(folder, exist_ok=True)
         files = df["FILE"]
         
         ppsd = None
@@ -171,7 +171,7 @@ def ppsd(
     None
     """
 
-    if not os.path.isdir(output_path): os.makedirs(output_path)
+    os.makedirs(output_path, exist_ok=True)
     database_path = os.path.join(output_path, "database.db")
     if inventory_path == None:
         inventory_path = os.path.join(output_path, "data", "inventory")
