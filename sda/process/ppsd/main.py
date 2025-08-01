@@ -67,7 +67,7 @@ def process_ppsd_station(station, parameters, queue):
         
         ppsd = None
         
-        for idx, f in enumerate(tqdm(files)):           
+        for idx, f in enumerate(files):           
             try:
                 stream = read(f, sourcename=st)
                 inventorySub = inventory.select(network=NET, station=STA, location=LOC, channel=CHA)
