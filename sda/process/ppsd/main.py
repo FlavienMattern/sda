@@ -17,12 +17,15 @@ import sda.functions.jobs as jb
 
 
 def save_ppsd(ppsd, folder, station):
-    if ppsd is None: return
-    start = min(ppsd.current_times_used).datetime.strftime("%Y-%m-%d")
-    end = max(ppsd.current_times_used).datetime.strftime("%Y-%m-%d")
-    filename = os.path.join(folder, f"{station}_{start}_{end}.npz")
-    ppsd.save_npz(filename)
-    
+    try:
+        if ppsd is None: return
+        start = min(ppsd.current_times_used).datetime.strftime("%Y-%m-%d")
+        end = max(ppsd.current_times_used).datetime.strftime("%Y-%m-%d")
+        filename = os.path.join(folder, f"{station}_{start}_{end}.npz")
+        ppsd.save_npz(filename)
+    except Exception as e:
+        print(f"Error saving PPSD for {station}:\n{e}")
+
     
    
 def init_ppsd(stream, inventory, parameters):
