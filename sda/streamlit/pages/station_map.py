@@ -25,14 +25,12 @@ if database.is_loaded():
     inventory = inventory.drop(columns=["geometry"])
     inventory['Channels'] = inventory['Channels'].apply(lambda x: list(dict.fromkeys(x)))
 
-
-
     ########### Configure Layout ###########
 
     row = st.columns([0.5, 0.5])
 
     tile = row[0].container()
-    modules.map_stations(inventory)
+    modules.map_stations(tile, inventory, height=600)
 
     tile = row[1].container()
-    modules.dataframe_stations(inventory)
+    modules.dataframe_stations(tile, inventory, height=600)
