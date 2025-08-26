@@ -10,7 +10,7 @@ database.status()
 if database.is_loaded():
     
     # Load page
-    p = page.Page(page_title, visible=True, removable=False, default_page=True)
+    p = page.Page(page_title, visible=True, removable=False, default_page=True, init_tabs=False)
 
     # Page Content    
     row = st.columns(3)
