@@ -12,19 +12,19 @@ def list():
         "map_stations": "Station Map",
     }
 
-def dataframe_stations(inventory):
+def dataframe_stations(tile, inventory, height=800):
     """Container with a dataframe of all seismic stations and metadata
 
     Args:
         tile (_type_): The streamlit containter
         inventory (_type_): A DataFrame object containing stations metadata
     """
-    st.subheader(":material/data_table: Station Metadata")
-    st.dataframe(inventory, height=800)
+    tile.subheader(":material/data_table: Station Metadata")
+    tile.dataframe(inventory, height=height)
 
 
 
-def map_stations(inventory, lat_col="Latitude", lon_col="Longitude", ele_col="Elevation"):
+def map_stations(tile, inventory, lat_col="Latitude", lon_col="Longitude", height=800):
     """Container with a map of seismic stations.
 
     Args:
@@ -34,65 +34,51 @@ def map_stations(inventory, lat_col="Latitude", lon_col="Longitude", ele_col="El
         lon_col (str, optional): DataFrame column with longitudes. Defaults to "Longitude".
     """
     
-    MAPBOX_TOKEN = "to be changed"
+    MAPBOX_TOKEN = "pk.eyJ1IjoiZm1hdHRlcm4iLCJhIjoiY21lc2duY29xMDJvOTJpc2IzemtweXU0aCJ9.sj6nuBio6x5gxQN0N9_Mng"
     
-    inventory[ele_col] = inventory[ele_col]/1e3
-    
-    st.subheader(":material/map_search: Station Map")
+    tile.subheader(":material/map_search: Station Map")
+
+    ICON_URL = "https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png"
+    icon_mapping = {
+        "marker": {
+            "x": 0, "y": 0, "width": 128, "height": 128,
+            "anchorY": 128
+        }
+    }
+    inv = inventory.copy()
+    inv["icon"] = "marker"
 
     stations_layer = pydeck.Layer(
-        "ScatterplotLayer",
-        data=inventory,
+        "IconLayer",
+        data=inv,
         id="station_inventory",
         get_position=[lon_col, lat_col],
-        get_elevation=ele_col,
-        elevation_scale=10,
-        get_color="[255, 75, 75]",
+        get_icon="icon",
+        icon_atlas=ICON_URL,
+        icon_mapping=icon_mapping,
+        get_size = 20,
         pickable=True,
         auto_highlight=True,
-        get_radius=500,  
     )
 
-    latmin = min(inventory[lat_col])
-    latmax = max(inventory[lat_col])
-    lonmin = min(inventory[lon_col])
-    lonmax = max(inventory[lon_col])
+    latmin = min(inv[lat_col])
+    latmax = max(inv[lat_col])
+    lonmin = min(inv[lon_col])
+    lonmax = max(inv[lon_col])
     lon0, lat0, zoom = map_utils.get_bounds(lonmin, lonmax, latmin, latmax)
 
     view_state = pydeck.ViewState(
-        latitude=lat0, longitude=lon0, controller=True, zoom=zoom, pitch=50, bearing=0,
+        latitude=lat0, longitude=lon0, controller=True, zoom=zoom, pitch=0, bearing=0,
     )
-    
-    # Terrain Layer
-    terrain_layer = pydeck.Layer(
-        "TerrainLayer",
-        data = None,
-        elevation_decoder={
-            "rScaler": 256,
-            "gScaler": 1,
-            "bScaler": 1/256,
-            "offset": -32768
-        },
-        texture=f"https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/tiles/256/{{z}}/{{x}}/{{y}}?access_token={MAPBOX_TOKEN}",
-        elevation_data="https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
-        wireframe = False,
-        elevation_scale = 100
-    )
-    
+
     chart = pydeck.Deck(
-        layers=[stations_layer, terrain_layer],
+        layers = [stations_layer],
+        map_provider = None,
         initial_view_state=view_state,
-        map_style=None,   # on ne met pas de style par-dessus
+        tooltip={"text": "{Network}.{Station}\n({Longitude},{Latitude},{Elevation})\n{Channels}"},
+        map_style="mapbox://styles/mapbox/outdoors-v12",
         api_keys={"mapbox": MAPBOX_TOKEN},
     )
 
-    # chart = pydeck.Deck(
-    #     layers = [stations_layer],
-    #     map_provider = None,
-    #     initial_view_state=view_state,
-    #     tooltip={"text": "{Network}.{Station}\n({Longitude},{Latitude},{Elevation})\n{Channels}"},
-    #     api_keys={"mapbox": MAPBOX_TOKEN},
-    # )
-
-    event = st.pydeck_chart(chart, on_select="rerun", selection_mode="multi-object", height=1000)
+    event = tile.pydeck_chart(chart, on_select="rerun", selection_mode="multi-object", height=height)
     event.selection
