@@ -29,8 +29,6 @@ class Page:
 
         if not id_exists:
             self.page_id = self.create_page(title, visible=True, removable=True, default_page=False)
-        
-        st.write(st.session_state["session"]["content"]["pages"][self.page_id])
 
         if title != ":material/dashboard: Dashboard":
             st.title(title)
