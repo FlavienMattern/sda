@@ -88,7 +88,6 @@ if database.is_loaded():
     #     ] + [st.Page(os.path.join(page_folder, f"page_{idx:03d}", f"layout_{idx:03d}.py"), title=row.page_name, icon=":material/add_chart:") for idx, row in custom_pages.iterrows()]
     # }
 
-
 # Load Navigation bar
 if not database.is_loaded():
     pages = nav_default_pages
