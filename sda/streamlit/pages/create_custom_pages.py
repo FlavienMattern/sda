@@ -11,12 +11,11 @@ database.status()
 if database.is_loaded():
     
     # Manage Custom Pages
-    col_layout = [0.1, 0.3, 0.3, 0.3]
+    col_layout = [0.08, 0.3, 0.3, 0.3]
 
     row_header= st.columns(col_layout)
     row_header[0].container().subheader(":material/numbers: ID")
     row_header[1].container().subheader(":material/web: Page Name")
-    row_header[2].container().subheader(":material/code_blocks: Actions")
 
     # List of Custom Pages
     pages = page.get_pages()
@@ -38,16 +37,23 @@ if database.is_loaded():
         ####### Actions
         tile = row_page[2].container()
 
-        sub_row_page = tile.columns(2)
+        sub_row_page = tile.columns([0.1, 0.2, 0.1])
 
         sub_tile = sub_row_page[0].container()
+        sub_tile.button(":material/visibility:",
+                        use_container_width = False,
+                        key = f"page_{idx:03d}_hide",
+                        on_click = page.visibility,
+                        args = [idx])
+
+        sub_tile = sub_row_page[1].container()
         sub_tile.button(":material/refresh: Clean Page",
                         use_container_width = True,
                         key = f"page_{idx:03d}_clean",
                         on_click = page.clean_check,
                         args = [idx])
 
-        sub_tile = sub_row_page[1].container()
+        sub_tile = sub_row_page[2].container()
         sub_tile.button(":material/delete:",
                         key = f"page_{idx:03d}_remove",
                         type = "primary",
@@ -62,3 +68,5 @@ if database.is_loaded():
 
     if create_button:
         page.create(new_page_name)
+
+    # st.write(st.session_state.get("session")["content"]["pages"])
