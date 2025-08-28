@@ -54,7 +54,7 @@ if database.is_loaded():
 
 
     # Load page
-    p = page.Page(page_title, visible=True, removable=False, default_page=True, init_tabs=False)
+    p = page.Page(page_title, visible=True, removable=False, default_page=False, init_tabs=False)
 
     wdir = st.session_state.get("database")["settings"]["wdir"]
     placeholder = st.empty()
