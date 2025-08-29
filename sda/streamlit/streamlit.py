@@ -61,6 +61,7 @@ nav_default_pages = {
     "Home": [
         st.Page("pages/dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True),
         st.Page("pages/create_custom_pages.py", title="Pages", icon=":material/instant_mix:"),
+        st.Page("pages/sandbox.py", title="Sandbox", icon=":material/dashboard:"),
     ]
 }
 
@@ -73,7 +74,7 @@ if database.is_loaded():
     page_folder = os.path.join(wdir, "streamlit", f"session_{session_id:03d}", "custom_pages")
 
     nav_general_pages = {
-        "Tools": [
+        "Explorer": [
             st.Page("pages/database.py", title="Database Explorer", icon=":material/database:"),
             st.Page("pages/station_map.py", title="Map Explorer", icon=":material/map:"),
             st.Page("pages/availability.py", title="Data Availability", icon=":material/view_timeline:"),
