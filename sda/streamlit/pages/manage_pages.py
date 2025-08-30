@@ -49,10 +49,20 @@ if database.is_loaded():
         ####### Actions
         tile = row_page[2].container()
 
-        sub_row_page = tile.columns([0.1, 0.1, 0.3, 0.2])
+        sub_row_page = tile.columns([0.1, 0.1, 0.1, 0.3, 0.2])
         
         ##
         sub_tile = sub_row_page[0].container()
+        disabled = not page_content["page_settings"]["removable"]
+        sub_tile.button(":material/edit:",
+                        use_container_width = True,
+                        key = f"page_{page_id}_edit",
+                        on_click = pages.edit_settings,
+                        args = [page_id],
+                        disabled = disabled)
+        
+        ##
+        sub_tile = sub_row_page[1].container()
         disabled = True if ii == 0 else False
         sub_tile.button(":material/arrow_upward:",
                         use_container_width = True,
@@ -62,7 +72,7 @@ if database.is_loaded():
                         disabled = disabled)
         
         ##
-        sub_tile = sub_row_page[1].container()
+        sub_tile = sub_row_page[2].container()
         disabled = True if ii == len(page_list)-1 else False
         sub_tile.button(":material/arrow_downward:",
                         use_container_width = True,
@@ -72,7 +82,7 @@ if database.is_loaded():
                         disabled = disabled)
 
         ##
-        sub_tile = sub_row_page[2].container()
+        sub_tile = sub_row_page[3].container()
         disabled = not page_content["page_settings"]["removable"]
         sub_tile.button(":material/refresh: Clean Page",
                         use_container_width = True,
@@ -82,7 +92,7 @@ if database.is_loaded():
                         disabled = disabled)
 
         ##
-        sub_tile = sub_row_page[3].container()
+        sub_tile = sub_row_page[4].container()
         disabled = not page_content["page_settings"]["removable"]
         sub_tile.button(":material/delete:",
                         key = f"page_{page_id}_remove",

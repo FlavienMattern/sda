@@ -69,7 +69,6 @@ def remove(page_id):
         os.remove(custom_page_filename)
 
     # Delete Page in Database
-    st.write(st.session_state["session"]["content"]["pages"])
     st.session_state["session"]["content"]["pages"].pop(f"{page_id}", None)
 
     st.rerun()
@@ -130,6 +129,31 @@ def remove_check(page_id):
     st.warning(f":material/warning: You are about to permanently remove the custom page : **{page_icon} {page_name}**. You will loose all information on this page. Close this popup if it was a mistake.")
     if st.button(":material/check: Remove Page"):
         remove(page_id)
+        
+
+@st.dialog(":material/edit: Page Settings")
+def edit_settings(page_id):
+    page_content = get_page_content(page_id)
+    with st.form(f"edit_page_{page_id}_form"):
+        title = st.text_input("Page Name", value=page_content["page_settings"]["title"])
+        icon = st.text_input("Page Icon", value=page_content["page_settings"]["icon"])
+        st.caption("For the list of available icons, please refer to the [Material Design Icons](https://fonts.google.com/icons?selected=Material+Icons).")
+        
+        submitted = st.form_submit_button("Save Settings")
+        if submitted:
+            if title in ["", None] or title.isspace():
+                st.error(f"You need to enter a valid name !")
+                return
+
+            if title != page_content["page_settings"]["title"] and title in get_page_names():
+                st.error(f"A page with the name **{title}** already exists !")
+                return
+            
+            st.session_state["session"]["content"]["pages"][page_id]["page_settings"]["title"] = title
+            st.session_state["session"]["content"]["pages"][page_id]["page_settings"]["icon"] = icon
+            
+            st.rerun()
+
 
 def visibility(id):
     get_page_id = f"{id}"
