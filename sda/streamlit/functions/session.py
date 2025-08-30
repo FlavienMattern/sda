@@ -39,6 +39,7 @@ def save_sessions_list(update_current_session_date=True):
     if update_current_session_date:
         session_id = st.session_state.get("session")["settings"]["id"]
         sessions.loc[session_id, 'last_used'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        sessions.loc[session_id, 'session_name'] = st.session_state.get("session")["settings"]["name"]
 
     sessions.to_csv(os.path.join(wdir, "streamlit", "sessions.txt"))
 
@@ -59,10 +60,9 @@ def load(id):
 
 def save():
     
-    wdir = st.session_state.get("database")["settings"]["wdir"]
+    wdir = st.session_state.get("database")["settings"]["wdir"]    
+    st.session_state["session"]["settings"]["name"] = st.session_state.get("session")["settings"]["name"]
     session_dict = st.session_state.get("session")
-    session_name = session_dict["settings"]["name"]
-    session_id = session_dict["settings"]["id"]
     session_folder = session_dict["settings"]["folder"]
 
     save_folder = os.path.join(wdir, session_folder)
@@ -101,6 +101,27 @@ def clean():
 
     save()
     st.rerun()
+    
+    
+@st.dialog(":material/edit: Session Settings")
+def edit_settings(session_id):
+    with st.form(f"edit_page_{session_id}_form"):
+        session_name = st.text_input("Session Name", value=st.session_state.get("session")["settings"]["name"])
+        
+        submitted = st.form_submit_button("Save Settings")
+        if submitted:
+            if session_name in ["", None] or session_name.isspace():
+                st.error(f"You need to enter a valid name !")
+                return
+
+            if session_name != st.session_state.get("session")["settings"]["name"] and session_name in get_sessions_list()["session_name"].values:
+                st.error(f"A session with the name **{session_name}** already exists !")
+                return
+            
+            st.session_state["session"]["settings"]["name"] = session_name
+            
+            save()
+            st.rerun()
 
 
 @st.dialog(":material/warning: Caution !")
@@ -114,7 +135,6 @@ def clean_check():
 def remove(id):
     sessions = get_sessions_list()
     sessions = sessions.drop(id)
-    st.session_state["all_sessions"] = sessions
 
     if id == st.session_state.get("session")["settings"]["id"]:
         load(0)
@@ -126,6 +146,7 @@ def remove(id):
     except:
         pass
 
+    st.session_state["all_sessions"] = sessions
     save_sessions_list(update_current_session_date=False)
     save()
     st.rerun()

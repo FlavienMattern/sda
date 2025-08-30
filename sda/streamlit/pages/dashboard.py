@@ -83,16 +83,16 @@ if database.is_loaded():
         ####### Session Name
         tile = row_page[1].container()
         if select_disabled :
-            tile.info(f"**{session_name}**")
+            tile.success(f"**{session_name}**")
         else:
-            tile.warning(f"**{session_name}**")
+            tile.info(f"**{session_name}**")
 
         ####### Last Changed
         tile = row_page[2].container()
         if select_disabled :
-            tile.info(session_last_used)
+            tile.success(session_last_used)
         else:
-            tile.warning(session_last_used)
+            tile.info(session_last_used)
 
         # ####### Check Actions
         # if st.session_state.get(f"{session_id:03d}_select"):
@@ -106,16 +106,26 @@ if database.is_loaded():
         ####### Actions
         tile = row_page[3].container()
 
-        sub_row_page = tile.columns(2)
-
+        sub_row_page = tile.columns([0.1, 0.3, 0.2])
+        
+        ##
         sub_tile = sub_row_page[0].container()
+        disabled = True
+        sub_tile.button(":material/edit:",
+                        use_container_width = True,
+                        key = f"page_{idx}_edit",
+                        on_click = session.edit_settings,
+                        args = [idx],
+                        disabled = clean_disabled)
+
+        sub_tile = sub_row_page[1].container()
         sub_tile.button(":material/refresh: Clean Session",
                         use_container_width = True,
                         key = f"{session_id:03d}_clean",
                         disabled = clean_disabled,
                         on_click = session.clean_check)
 
-        sub_tile = sub_row_page[1].container()
+        sub_tile = sub_row_page[2].container()
         sub_tile.button(":material/delete:",
                         key = f"{session_id:03d}_remove",
                         disabled = remove_disabled,
