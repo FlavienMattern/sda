@@ -71,6 +71,7 @@ def remove(page_id):
     # Delete Page in Database
     st.session_state["session"]["content"]["pages"].pop(f"{page_id}", None)
 
+    session.save()
     st.rerun()
     
     
@@ -106,10 +107,13 @@ def change_order(page_id, order):
     pages = st.session_state["session"]["content"]["pages"]
     pages[page1], pages[page2] = pages[page2], pages[page1]
     
+    session.save()
+    
     
 def clean(page_id):
     st.session_state["session"]["content"]["pages"][page_id]["modules"] = {}
     st.session_state["session"]["content"]["pages"][page_id]["custom_layout"] = {}
+    session.save()
     st.rerun()
     
     
@@ -152,6 +156,7 @@ def edit_settings(page_id):
             st.session_state["session"]["content"]["pages"][page_id]["page_settings"]["title"] = title
             st.session_state["session"]["content"]["pages"][page_id]["page_settings"]["icon"] = icon
             
+            session.save()
             st.rerun()
 
 
@@ -162,6 +167,8 @@ def visibility(id):
         st.session_state["session"]["content"]["pages"][get_page_id]["page_settings"]["visible"] = False
     else:
         st.session_state["session"]["content"]["pages"][get_page_id]["page_settings"]["visible"] = True
+        
+    session.save()
     
     
     
@@ -201,6 +208,7 @@ def create(name):
     with open(custom_page_filename, "w") as f:
         f.write(layout(name))
 
+    session.save()
     st.rerun()
     
 @st.dialog(":material/warning: Error")

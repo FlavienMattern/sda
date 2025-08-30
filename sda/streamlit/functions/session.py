@@ -127,6 +127,7 @@ def remove(id):
         pass
 
     save_sessions_list(update_current_session_date=False)
+    save()
     st.rerun()
 
 
@@ -184,6 +185,7 @@ def create(name):
             st.session_state["all_sessions"] = sessions
             save_sessions_list()
 
+            save()
             st.rerun()
 
 
