@@ -1,6 +1,6 @@
 import streamlit as st
 from sda.streamlit.functions import db_utils as database
-from sda.streamlit.functions import custom_pages as pages
+from sda.streamlit.functions import pages
 from sda.streamlit.functions import session
 import os
 
@@ -60,41 +60,44 @@ if database.is_loaded():
 nav_default_pages = {
     "Home": [
         st.Page("pages/dashboard.py", title="Dashboard", icon=":material/dashboard:", default=True),
-        st.Page("pages/create_custom_pages.py", title="Pages", icon=":material/instant_mix:"),
-        st.Page("pages/sandbox.py", title="Sandbox", icon=":material/dashboard:"),
+        st.Page("pages/manage_pages.py", title="Pages", icon=":material/instant_mix:"),
     ]
 }
 
-# Custom Pages
-if database.is_loaded():
-
-    custom_pages = pages.get_pages()
-    wdir = st.session_state.get("database")["settings"]["wdir"]
-    session_id =  st.session_state.get("session")["settings"]["id"]
-    page_folder = os.path.join(wdir, "streamlit", f"session_{session_id:03d}", "custom_pages")
-
-    nav_general_pages = {
-        "Explorer": [
-            st.Page("pages/database.py", title="Database Explorer", icon=":material/database:"),
-            st.Page("pages/station_map.py", title="Map Explorer", icon=":material/map:"),
-            st.Page("pages/availability.py", title="Data Availability", icon=":material/view_timeline:"),
-            st.Page("pages/waveforms.py", title="Waveform Viewer", icon=":material/vital_signs:"),
-            st.Page("pages/process2.py", title="Process 2", icon=":material/browse_activity:"),
-    ] + [st.Page(os.path.join(page_folder, f"page_{idx:03d}", f"layout_{idx:03d}.py"), title=row.page_name, icon=":material/add_chart:") for idx, row in custom_pages.iterrows()]
+# Default Pages
+pages_dict = {
+    "pages/database.py": {"title":"Database Explorer", "icon":":material/database:"},
+    "pages/station_map.py": {"title":"Map Explorer", "icon":":material/map:"},
+    "pages/availability.py": {"title":"Data Availability", "icon":":material/view_timeline:"},
+    "pages/waveforms.py": {"title":"Waveform Viewer", "icon":":material/vital_signs:"},
+    "pages/process2.py": {"title":"Process 2", "icon":":material/browse_activity:"},
+    "pages/sandbox.py": {"title":"Sandbox", "icon":":material/dashboard:"}
 }
 
-    # nav_custom_pages = {
-    #     "Data Viewer": [
-    #         st.Page("pages/create_custom_pages.py", title="Manage Custom Pages", icon=":material/instant_mix:"),
-    #     ] + [st.Page(os.path.join(page_folder, f"page_{idx:03d}", f"layout_{idx:03d}.py"), title=row.page_name, icon=":material/add_chart:") for idx, row in custom_pages.iterrows()]
-    # }
+if database.is_loaded():
+   
+    for key, value in pages_dict.items():
+        if pages.is_visible(pages.get_page_id(key)):
+            pages.Page(file=key, title=value["title"], icon=value["icon"], removable=False, default_page=True, init_tabs=False)
+            
+    page_list = st.session_state.get("session")["content"]["pages"]
+    
+    nav_general_pages = {
+        "Explorer": [
+            st.Page(pcontent["page_settings"]["file"], title=pcontent["page_settings"]["title"], icon=pcontent["page_settings"]["icon"])
+            for pname, pcontent in page_list.items()
+            if pages.is_visible(pages.get_page_id(pcontent["page_settings"]["file"]))
+        ]
+    }
+    
+    
 
 # Load Navigation bar
 if not database.is_loaded():
-    pages = nav_default_pages
+    page_list = nav_default_pages
 else:
-    pages = nav_default_pages | nav_general_pages
-pg = st.navigation(pages, position="sidebar")
+    page_list = nav_default_pages | nav_general_pages
+pg = st.navigation(page_list, position="sidebar")
     
 
 # Run webpage

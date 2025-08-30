@@ -1,4 +1,4 @@
-page_title = ":material/experiment: [DEV] Sandbox"
+page_file = "pages/sandbox.py"
 
 from sda.streamlit.functions import db_utils as database
 from sda.streamlit.functions import modules
@@ -10,7 +10,14 @@ import streamlit as st
 database.status()
 
 if database.is_loaded():
-    p = pages.Page(page_title, visible=True, removable=True, default_page=True, init_tabs=True)
+    
+    page_id = pages.get_page_id(page_file)
+    pages.load_page(page_file)
+    
+    
+    if session.is_dev_mode():
+        st.divider()
+        st.write(st.session_state["session"]["content"]["pages"][page_id])
 
 
     

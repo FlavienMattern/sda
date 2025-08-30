@@ -1,17 +1,207 @@
 import streamlit as st
 import uuid
 from sda.streamlit.functions import session, modules, tmp
+import os
+import shutil
 
 
 def generate_unique_id():
     return str(uuid.uuid4())
 
 
+def get_pages():
+    return list(st.session_state["session"]["content"]["pages"].keys())
+
+
+def get_page_names():
+    
+    page_names = []
+    for page_id in st.session_state["session"]["content"]["pages"].keys():
+        page_names.append(st.session_state["session"]["content"]["pages"][page_id]["page_settings"]["title"])
+        
+    return page_names
+
+
+def get_page_content(page_id):
+    return st.session_state["session"]["content"]["pages"][page_id]
+
+
+def get_page_id(file):
+    
+    if st.session_state.get("session")["content"] is None:
+        return None
+    
+    if "pages" not in st.session_state.get("session")["content"].keys():
+        return None
+    
+    for page_id in st.session_state["session"]["content"]["pages"].keys():
+        if st.session_state["session"]["content"]["pages"][page_id]["page_settings"]["file"] == file:
+            return page_id
+    return None
+
+
+def is_visible(page_id):
+    if page_id is None:
+        return True
+    else:
+        return st.session_state["session"]["content"]["pages"][page_id]["page_settings"]["visible"]
+
+
+
+def load_page(file):
+    
+    page_id = get_page_id(file)
+    page_content = st.session_state["session"]["content"]["pages"][page_id]
+    
+    if file != "pages/dashboard.py":
+        st.title(page_content["page_settings"]["title"])
+        st.divider()
+    
+    
+def remove(page_id):
+
+    # Delete Folder Page
+    wdir = st.session_state.get("database")["settings"]["wdir"]
+    session_id =  st.session_state.get("session")["settings"]["id"]
+    custom_page_filename = os.path.join(wdir, "streamlit", f"session_{session_id:03d}", "custom_pages", f"{page_id}.py")
+
+    if os.path.exists(custom_page_filename):
+        os.remove(custom_page_filename)
+
+    # Delete Page in Database
+    st.write(st.session_state["session"]["content"]["pages"])
+    st.session_state["session"]["content"]["pages"].pop(f"{page_id}", None)
+
+    st.rerun()
+    
+    
+def layout(title):
+    return f"""
+############# Page Header #############
+from sda.streamlit.functions import db_utils as database
+from sda.streamlit.functions import custom_pages as page
+import streamlit as st
+st.title(":material/add_chart: {title}")
+st.divider()
+database.status()
+#######################################
+    """
+    
+    
+def change_order(page_id, order):
+    
+    page_list = get_pages()
+    
+    if order == "UP":
+        page1 = page_id
+        page_cur_pos = page_list.index(page_id)
+        page_new_pos = page_cur_pos - 1
+        page2 = get_pages()[page_new_pos]
+        
+    else:
+        page1 = page_id
+        page_cur_pos = page_list.index(page_id)
+        page_new_pos = page_cur_pos + 1
+        page2 = get_pages()[page_new_pos]
+    
+    pages = st.session_state["session"]["content"]["pages"]
+    pages[page1], pages[page2] = pages[page2], pages[page1]
+    
+    
+def clean(page_id):
+    st.session_state["session"]["content"]["pages"][page_id]["modules"] = {}
+    st.session_state["session"]["content"]["pages"][page_id]["custom_layout"] = {}
+    st.rerun()
+    
+    
+@st.dialog(":material/warning: Caution !")
+def clean_check(page_id):
+    page_name = get_page_content(page_id)["page_settings"]["title"]
+    page_icon = get_page_content(page_id)["page_settings"]["icon"]
+    st.warning(f":material/warning: You are about to clean the custom page : **{page_icon} {page_name}**. You will loose all information on this page. Close this popup if it was a mistake.")
+    if st.button(":material/check: Clean Page"):
+        clean(page_id)
+
+
+@st.dialog(":material/warning: Caution !")
+def remove_check(page_id):
+    page_name = get_page_content(page_id)["page_settings"]["title"]
+    page_icon = get_page_content(page_id)["page_settings"]["icon"]
+    st.warning(f":material/warning: You are about to permanently remove the custom page : **{page_icon} {page_name}**. You will loose all information on this page. Close this popup if it was a mistake.")
+    if st.button(":material/check: Remove Page"):
+        remove(page_id)
+
+def visibility(id):
+    get_page_id = f"{id}"
+    current_visibility = st.session_state["session"]["content"]["pages"][get_page_id]["page_settings"]["visible"]
+    if current_visibility:
+        st.session_state["session"]["content"]["pages"][get_page_id]["page_settings"]["visible"] = False
+    else:
+        st.session_state["session"]["content"]["pages"][get_page_id]["page_settings"]["visible"] = True
+    
+    
+    
+def create(name):
+
+    if name in ["", None] or name.isspace():
+        popup_error(f"You need to enter a valid name !")
+        return
+
+    if name in get_page_names():
+        popup_error(f"A page with the name **{name}** already exists !")
+        return
+
+    page_list = get_pages()
+    wdir = st.session_state.get("database")["settings"]["wdir"]
+    session_id =  st.session_state.get("session")["settings"]["id"]
+    
+    page_id = generate_unique_id()
+
+    # Update list of pages
+    pages_folder = os.path.join(wdir, "streamlit", f"session_{session_id:03d}", "custom_pages")
+    
+    os.makedirs(pages_folder, exist_ok=True)
+    
+    # Create page layout
+    custom_page_filename = os.path.join(wdir, "streamlit", f"session_{session_id:03d}", "custom_pages", f"{page_id}.py")
+
+    if os.path.exists(custom_page_filename):
+        os.remove(custom_page_filename)
+    
+    Page(file=custom_page_filename, title=name, icon=":material/instant_mix:", removable=True, default_page=False, init_tabs=True, page_id=page_id)
+    
+    with open(custom_page_filename, "w") as f:
+        f.write(layout(name))
+    
+    
+    with open(custom_page_filename, "w") as f:
+        f.write(layout(name))
+
+    st.rerun()
+    
+@st.dialog(":material/warning: Error")
+def popup_error(msg):
+    st.error(msg)
+
+
+@st.dialog(":material/warning: Caution")
+def popup_warning(msg):
+    st.warning(msg)
+
+
 class Page:
 
-    def __init__(self, title, visible=True, removable=True, default_page=False, init_tabs=True):
+    def __init__(self, file, title, icon, removable=True, default_page=False, init_tabs=True, page_id=None):
 
         self.show_block = False
+        self.visible = True
+        self.removable = removable
+        self.title = title
+        self.default_page = default_page
+        self.init_tabs = init_tabs
+        self.file = file
+        self.title = title
+        self.icon = icon
 
         if st.session_state.get("session")["content"] is None:
             st.session_state["session"]["content"] = {}
@@ -20,33 +210,35 @@ class Page:
             st.session_state["session"]["content"]["pages"] = {}
 
         # Check if page is already stored
-        id_exists = False
-        for page_id in st.session_state["session"]["content"]["pages"].keys():
-            if title == st.session_state["session"]["content"]["pages"][page_id]["page_settings"]["title"]:
-                self.page_id = page_id
-                id_exists = True
-                break
+        if page_id is not None:
+            self.page_id = page_id
+            id_exists = False
+        else:
+            id_exists = False
+            for page_id in st.session_state["session"]["content"]["pages"].keys():
+                if title == st.session_state["session"]["content"]["pages"][page_id]["page_settings"]["title"]:
+                    self.page_id = page_id
+                    id_exists = True
+                    break
+            if not id_exists:
+                self.page_id = None
 
         if not id_exists:
-            self.page_id = self.create_page(title, visible=visible, removable=removable, default_page=default_page)
+            self.page_id = self.create_page(file, title, icon, removable=removable, default_page=default_page, page_id=self.page_id)
         else:
-            st.session_state["session"]["content"]["pages"][page_id]["page_settings"] = {
+            st.session_state["session"]["content"]["pages"][self.page_id]["page_settings"] = {
                 "title": title,
-                "visible": visible,
+                "icon": icon,
+                "file": self.file,
+                "visible": self.visible,
                 "removable": removable,
                 "default_page": default_page,
             }
             
         if not default_page:
-            if "custom_layout" not in st.session_state["session"]["content"]["pages"][page_id].keys():
-                st.session_state["session"]["content"]["pages"][page_id]["custom_layout"] = {}
+            if "custom_layout" not in st.session_state["session"]["content"]["pages"][self.page_id].keys():
+                st.session_state["session"]["content"]["pages"][self.page_id]["custom_layout"] = {}
 
-
-        if title != ":material/dashboard: Dashboard":
-            st.title(title)
-            st.divider()
-            
-        st.write(st.session_state["session"]["content"]["pages"])
 
         # if init_tabs:
         #     tab_list = self.get_tabs() + [":material/add_circle:"]
@@ -100,15 +292,13 @@ class Page:
         # if session.is_dev_mode():
         #     st.write(st.session_state["session"]["content"]["pages"][self.page_id])
         
-    def create_page(self, title, visible=True, removable=True, default_page=False):
-        # Define page id (if not found previously)
-        ids = st.session_state["session"]["content"]["pages"].keys()
-        existing_ids = {int(id_.split('_')[1]) for id_ in ids if id_.startswith('page_')}
-        i = 0
-        while i in existing_ids:
-            i += 1
-        page_id = f"page_{i:03d}"
-
+        
+    def create_page(self, file, title, icon, removable=True, default_page=False, page_id=None):
+        
+        if page_id is None:
+            page_id = generate_unique_id()
+        
+        # Define page id (if not found previously)       
         default_settings = {
             "show_title": True,
             "show_border": True,
@@ -118,12 +308,13 @@ class Page:
         st.session_state["session"]["content"]["pages"][page_id] = {
             "page_settings": {
                 "title": title,
-                "visible": visible,
+                "file": file,
+                "icon": icon,
+                "visible": self.visible,
                 "removable": removable,
                 "default_page": default_page,
             },
             "modules": {}
-            
         }
 
         return page_id
