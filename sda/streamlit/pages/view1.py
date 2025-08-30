@@ -1,4 +1,4 @@
-page_title = ":material/map: View 1"
+page_file = "pages/view1.py"
 
 from sda.streamlit.functions import db_utils as database
 from sda.streamlit.functions import modules
@@ -10,6 +10,7 @@ database.status()
 if database.is_loaded():
     
     # Load page
-    p = pages.Page(page_title, visible=True, removable=False, default_page=True)
+    page_id = pages.get_page_id(page_file)
+    pages.load_page(page_file)
 
     # Page Content

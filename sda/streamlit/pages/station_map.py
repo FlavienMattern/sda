@@ -1,4 +1,4 @@
-page_title = ":material/map: Map Explorer"
+page_file = "pages/station_map.py"
 
 from sda.streamlit.functions import db_utils as database
 from sda.streamlit.functions import modules
@@ -10,7 +10,8 @@ database.status()
 if database.is_loaded():
     
     # Load page
-    p = pages.Page(page_title, visible=True, removable=False, default_page=True, init_tabs=False)
+    page_id = pages.get_page_id(page_file)
+    pages.load_page(page_file)
 
     # Page Content
     import pickle as pkl

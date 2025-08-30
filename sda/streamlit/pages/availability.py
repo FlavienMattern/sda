@@ -1,4 +1,4 @@
-page_title = ":material/view_timeline: Data Availability"
+page_file = "pages/availability.py"
 
 from sda.streamlit.functions import db_utils as database
 from sda.streamlit.functions import modules
@@ -54,7 +54,8 @@ if database.is_loaded():
 
 
     # Load page
-    p = pages.Page(page_title, visible=True, removable=False, default_page=False, init_tabs=False)
+    page_id = pages.get_page_id(page_file)
+    pages.load_page(page_file)
 
     wdir = st.session_state.get("database")["settings"]["wdir"]
     placeholder = st.empty()
