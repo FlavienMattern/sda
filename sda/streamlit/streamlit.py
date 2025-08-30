@@ -71,7 +71,6 @@ pages_dict = {
     "pages/availability.py": {"title":"Data Availability", "icon":":material/view_timeline:"},
     "pages/waveforms.py": {"title":"Waveform Viewer", "icon":":material/vital_signs:"},
     "pages/process2.py": {"title":"Process 2", "icon":":material/browse_activity:"},
-    "pages/sandbox.py": {"title":"Sandbox", "icon":":material/dashboard:"}
 }
 
 if database.is_loaded():
