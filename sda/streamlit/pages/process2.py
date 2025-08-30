@@ -1,4 +1,4 @@
-page_file = "pages/station_map.py"
+page_file = "pages/process2.py"
 
 from sda.streamlit.functions import db_utils as database
 from sda.streamlit.functions import modules
