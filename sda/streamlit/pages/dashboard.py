@@ -1,4 +1,4 @@
-page_file = "pages/dashboard.py"
+page_title = ":material/dashboard: Dashboard"
 
 from sda.streamlit.functions import db_utils as database
 from sda.streamlit.functions import modules
@@ -29,10 +29,6 @@ else:
 
 #### Container 2 - Session Status
 if database.is_loaded():
-    
-    # Load page
-    page_id = pages.get_page_id(page_file)
-    pages.load_page(page_file)
     
     tile = row[1].container()
     tile.title(":material/web: Current Session")
