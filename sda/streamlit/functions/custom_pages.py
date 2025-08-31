@@ -6,24 +6,25 @@ import numpy as np
 def generate_unique_id():
     return str(uuid.uuid4())
 
-container2 = {
+def default_block():
+    return {
             "layout": [[None,None], [None,None]],
-            "widths": [[0.1,0.9], [0.9,0.1]],
-            "block_id": generate_unique_id(),
+            "widths": [[0.6,0.4], [0.4,0.6]],
+            "block_id": [[generate_unique_id(),generate_unique_id()],[generate_unique_id(),generate_unique_id()]],
             "block_type": "container"
         }
 
 container_default = {
-            "layout": [[None,None],[container2,container2,None]],
-            "widths": [[0.3,0.7],[0.4,0.4,0.2]],
-            "block_id": generate_unique_id(),
+            "layout": [[None,None],[default_block(),default_block(),None]],
+            "widths": [[0.5,0.5],[0.3,0.4,0.3]],
+            "block_id": [[generate_unique_id(),generate_unique_id()],[generate_unique_id(),generate_unique_id(),generate_unique_id()]],
             "block_type": "container"
         }
 
 tab_default = {
             "layout": [[None,None]],
             "widths": [[None,None]],
-            "block_id": generate_unique_id(),
+            "block_id": [[generate_unique_id(),generate_unique_id()]],
             "block_type": "tab"
         }
 
@@ -36,11 +37,24 @@ def render_block(block):
             cols = st.columns(block["widths"][i])
             for j in range(Ncols):
                 sub_block = block["layout"][i][j]
+                block_id = block["block_id"][i][j]
                 with cols[j]:
-                    with st.container(border=True) as subtile:
-                        st.write(".")
+                    # tile = cols[j].container()
+                    tile = cols[j].columns([0.9, 0.1])
+                    tile_content = tile[0].container()
+                    tile_btn = tile[1].container()
+                    
+                    with tile_content.container(border=True):
+                        st.write(block_id)
                         if sub_block:
                             render_block(sub_block)
+                        low_btn = st.columns([0.8, 0.2])
+                        tile = low_btn[0].container()
+                        tile.button(":material/add:", key=f"addrow_{block_id}", use_container_width=True)
+                        tile = low_btn[1].container()
+                        tile.button(":material/delete:", key=f"delete_{block_id}", type="primary", use_container_width=True)
+                        
+                    tile_btn.button(":material/arrow_forward:", key=f"addcol_{block_id}", use_container_width=True)
         
         
     
