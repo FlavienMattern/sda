@@ -50,6 +50,7 @@ def render_block(block):
                         tile2_settings = tile2[1].container()
                         tile2_select.selectbox(block_id, options=[None, "Map Stations", "Dataframe Stations"], key=f"selectmodule_{block_id}", index=0)
                         tile2_settings.button(":material/dehaze:", key=f"settings_{block_id}", use_container_width=True)
+                        # Dans les settings, afficher les largeurs de chaque block de la ligne pour pouvoir les modifier ensemble
                         if sub_block:
                             render_block(sub_block)
                         low_btn = st.columns([0.8, 0.2])
