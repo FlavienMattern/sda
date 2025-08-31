@@ -33,3 +33,6 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/FlavienMattern/sda"
+
+[project.scripts]
+sda = "sda.cli:main"
