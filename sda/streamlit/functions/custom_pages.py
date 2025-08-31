@@ -45,7 +45,11 @@ def render_block(block):
                     tile_btn = tile[1].container()
                     
                     with tile_content.container(border=True):
-                        st.write(block_id)
+                        tile2 = st.columns([0.9, 0.1])
+                        tile2_select = tile2[0].container()
+                        tile2_settings = tile2[1].container()
+                        tile2_select.selectbox(block_id, options=[None, "Map Stations", "Dataframe Stations"], key=f"selectmodule_{block_id}", index=0)
+                        tile2_settings.button(":material/dehaze:", key=f"settings_{block_id}", use_container_width=True)
                         if sub_block:
                             render_block(sub_block)
                         low_btn = st.columns([0.8, 0.2])
