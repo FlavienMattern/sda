@@ -32,14 +32,13 @@ def render_block(block):
     if block["block_type"] == "container":
         Nrows = len(block["layout"])     
         for i in range(Nrows):
-            with st.container(border=True):
-                Ncols = len(block["layout"][i])
-                cols = st.columns(block["widths"][i])
-                for j in range(Ncols):
-                    with cols[j]:
-                        sub_block = block["layout"][i][j]
-                        subtile = cols[j].container(border=True)
-                        subtile.write(".")
+            Ncols = len(block["layout"][i])
+            cols = st.columns(block["widths"][i])
+            for j in range(Ncols):
+                sub_block = block["layout"][i][j]
+                with cols[j]:
+                    with st.container(border=True) as subtile:
+                        st.write(".")
                         if sub_block:
                             render_block(sub_block)
         
