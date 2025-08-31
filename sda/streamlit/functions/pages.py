@@ -1,8 +1,7 @@
 import streamlit as st
-import uuid
-from sda.streamlit.functions import session, modules, tmp
-import os
-import shutil
+import uuid, os
+from sda.streamlit.functions import session
+from sda.streamlit.functions import custom_pages as cpages
 
 
 def generate_unique_id():
@@ -52,11 +51,22 @@ def load_page(file):
     
     page_id = get_page_id(file)
     page_content = st.session_state["session"]["content"]["pages"][page_id]
+    page_name = page_content["page_settings"]["title"]
+    page_icon = page_content["page_settings"]["icon"]
+    custom_page = not page_content["page_settings"]["default_page"]
     
     if file != "pages/dashboard.py":
-        st.title(page_content["page_settings"]["title"])
+        st.title(page_icon + " " + page_name)
         st.divider()
     
+    if custom_page:
+        
+        cpages.load(page_id)
+        
+        if session.is_dev_mode():
+            st.divider()
+            st.write(page_content)
+        
     
 def remove(page_id):
 
@@ -75,15 +85,16 @@ def remove(page_id):
     st.rerun()
     
     
-def layout(title):
+def layout(page_file):
     return f"""
 ############# Page Header #############
+page_file = "{page_file}"
 from sda.streamlit.functions import db_utils as database
-from sda.streamlit.functions import custom_pages as page
-import streamlit as st
-st.title(":material/add_chart: {title}")
-st.divider()
+from sda.streamlit.functions import pages
 database.status()
+if database.is_loaded():
+    page_id = pages.get_page_id(page_file)
+    pages.load_page(page_file)
 #######################################
     """
     
@@ -113,6 +124,8 @@ def change_order(page_id, order):
 def clean(page_id):
     st.session_state["session"]["content"]["pages"][page_id]["modules"] = {}
     st.session_state["session"]["content"]["pages"][page_id]["custom_layout"] = {}
+    
+    print(st.session_state["session"]["content"]["pages"][page_id])
     session.save()
     st.rerun()
     
@@ -202,11 +215,7 @@ def create(name):
     Page(file=custom_page_filename, title=name, icon=":material/instant_mix:", removable=True, default_page=False, init_tabs=True, page_id=page_id)
     
     with open(custom_page_filename, "w") as f:
-        f.write(layout(name))
-    
-    
-    with open(custom_page_filename, "w") as f:
-        f.write(layout(name))
+        f.write(layout(custom_page_filename))
 
     session.save()
     st.rerun()

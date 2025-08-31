@@ -1,155 +1,113 @@
 import streamlit as st
-import os
-import pandas as pd
-import shutil
+import os, uuid
+import numpy as np
 
 
-def layout(title):
-    return f"""
-############# Page Header #############
-from sda.streamlit.functions import db_utils as database
-from sda.streamlit.functions import custom_pages as page
-import streamlit as st
-st.title(":material/add_chart: {title}")
-st.divider()
-database.status()
-#######################################
-    """
+def generate_unique_id():
+    return str(uuid.uuid4())
+
+container2 = {
+            "layout": [[None,None]],
+            "widths": [[0.1,0.9]],
+            "block_id": generate_unique_id(),
+            "block_type": "container"
+        }
+
+container_default = {
+            "layout": [[None,None],[container2,container2,None]],
+            "widths": [[0.3,0.7],[0.4,0.4,0.2]],
+            "block_id": generate_unique_id(),
+            "block_type": "container"
+        }
+
+tab_default = {
+            "layout": [[None,None]],
+            "widths": [[None,None]],
+            "block_id": generate_unique_id(),
+            "block_type": "tab"
+        }
 
 
-
-@st.dialog(":material/warning: Error")
-def popup_error(msg):
-    st.error(msg)
-
-
-@st.dialog(":material/warning: Caution")
-def popup_warning(msg):
-    st.warning(msg)
-
-
-def get_pages():
-
-    wdir = st.session_state.get("database")["settings"]["wdir"]
-    session_id =  st.session_state.get("session")["settings"]["id"]
-    pages_folder = os.path.join(wdir, "streamlit", f"session_{session_id:03d}", "custom_pages")
-    pages_filename = os.path.join(pages_folder, "pages.txt")
-
-    if not os.path.exists(pages_filename):
-        pages = pd.DataFrame({
-                    'page_name': [],
-                    'page_folder': []
-                })
-        pages.index.name = 'id'
-    else:
-        pages = pd.read_csv(pages_filename, delimiter=",")
-        pages.set_index("id", inplace=True)
-
-    return pages
-
-
-def create(name):
-
-    if st.session_state.get("session")["content"] is None:
-        st.session_state["session"]["content"] = {}
-
-    if "custom_pages" not in st.session_state.get("session")["content"].keys():
-        st.session_state["session"]["content"]["custom_pages"] = {}
-
-    if name in ["", None] or name.isspace():
-        popup_error(f"You need to enter a valid name !")
-        return
-
-    if name in st.session_state.get("session")["content"]["custom_pages"].keys():
-        popup_error(f"A custom page with the name **{name}** already exists !")
-        return
-
-    pages = get_pages()
-    wdir = st.session_state.get("database")["settings"]["wdir"]
-    session_id =  st.session_state.get("session")["settings"]["id"]
+def render_block(block):
+    if block["block_type"] == "container":
+        Nrows = len(block["layout"])     
+        for i in range(Nrows):
+            with st.container(border=True):
+                Ncols = len(block["layout"][i])
+                cols = st.columns(block["widths"][i])
+                for j in range(Ncols):
+                    with cols[j]:
+                        sub_block = block["layout"][i][j]
+                        subtile = cols[j].container(border=True)
+                        subtile.write(".")
+                        if sub_block:
+                            render_block(sub_block)
+        
+        
     
-    if len(pages) == 0:
-        page_id = 0
-    else:
-        page_id = max(list(pages.index)) + 1
-
-    # Update list of pages
-    pages_folder = os.path.join(wdir, "streamlit", f"session_{session_id:03d}", "custom_pages")
-    pages_filename = os.path.join(pages_folder, "pages.txt")
-    pages.loc[page_id] = [name, f"page_{page_id:03d}"]
     
-    os.makedirs(pages_folder, exist_ok=True)
 
-    pages.to_csv(pages_filename)
-
-    # Create page layout
-    custom_page_folder = os.path.join(wdir, "streamlit", f"session_{session_id:03d}", "custom_pages", f"page_{page_id:03d}")
-    custom_page_filename = os.path.join(custom_page_folder, f"layout_{page_id:03d}.py")
-
-    if os.path.exists(custom_page_folder):
-        shutil.rmtree(custom_page_folder)
+def load(page_id):
+    page_content = st.session_state["session"]["content"]["pages"][page_id]
+    custom_layout = page_content["custom_layout"]
+    modules = page_content["modules"]
+    ##############################################################
     
-    os.makedirs(custom_page_folder, exist_ok=True)
+    if custom_layout == {}:
+        custom_layout = container_default.copy()
+        
+    render_block(custom_layout)
     
-    with open(custom_page_filename, "w") as f:
-        f.write(layout(name))
-
-    st.rerun()
-
-
-
-def clean(id):
-
-    wdir = st.session_state.get("database")["settings"]["wdir"]
-    session_id =  st.session_state.get("session")["settings"]["id"]
-    custom_page_folder = os.path.join(wdir, "streamlit", f"session_{session_id:03d}", "custom_pages", f"page_{id:03d}")
-    custom_page_filename = os.path.join(custom_page_folder, f"layout_{id:03d}.py")
-    pages = get_pages()
-    page_name = pages[pages.index == id].page_name.values[0]
     
-    with open(custom_page_filename, "w") as f:
-        f.write(layout(page_name))
+    # if init_tabs:
+        #     tab_list = self.get_tabs() + [":material/add_circle:"]
+        #     tabs = st.tabs(tab_list)
 
-    st.rerun()
+        #     for itab, tab_id in enumerate(tab_list[:-1]):
 
+        #         tab = tabs[itab]
 
-@st.dialog(":material/warning: Caution !")
-def clean_check(id):
-    pages = get_pages()
-    page_name = pages[pages.index == id].page_name.values[0]
-    st.warning(f":material/warning: You are about to clean the custom page : **{page_name}**. You will loose all information on this page. Close this popup if it was a mistake.")
-    if st.button(":material/check: Clean Page"):
-        clean(id)
+        #         with tab:
+        #             row_header = st.columns(2)
+        #             tile_options = row_header[0].container()
 
+        #             if tile_options.toggle("Edition mode", key=f"{tab_id}_edition", value=False):
+        #                 render_mode = "edition"
+        #             else:
+        #                 render_mode = "view"
 
-def remove(id):
+        #             if session.is_dev_mode():
+        #                 tile_options = row_header[1].container()
+        #                 if tile_options.toggle("[DEV] Show raw blocks", key=f"{tab_id}_show_blocks", value=True):
+        #                     self.show_block = True
+        #                 else:
+        #                     self.show_block = False
 
-    # Delete Folder Page
-    wdir = st.session_state.get("database")["settings"]["wdir"]
-    session_id =  st.session_state.get("session")["settings"]["id"]
-    custom_page_folder = os.path.join(wdir, "streamlit", f"session_{session_id:03d}", "custom_pages", f"page_{id:03d}")
+        #             t = self.get_tab(tab_id)
+        #             tab_data = st.session_state["session"]["content"]["pages"][self.page_id]["tabs"][t.tab_id]
+        #             tab_data["layout"] = [row for row in tab_data["layout"] if row]
 
-    if os.path.exists(custom_page_folder):
-        shutil.rmtree(custom_page_folder)
+        #             # Affichage des lignes de blocs racine
+        #             for row_idx, row in enumerate(tab_data["layout"]):
+        #                 if not row:
+        #                     continue  # ignore les lignes vides
 
-    # Delete Page in Database
-    pages = get_pages()
-    pages = pages.drop(id)
-    pages_folder = os.path.join(wdir, "streamlit", f"session_{session_id:03d}", "custom_pages")
-    pages_filename = os.path.join(pages_folder, "pages.txt")
-    pages.to_csv(pages_filename)
+        #                 cols = st.columns(len(row))
+        #                 for col_idx, blk in enumerate(row):
+        #                     with cols[col_idx]:
+        #                         self.render_block(blk, row, col_idx, f"{tab_id}_row{row_idx}_col{col_idx}", render_mode, tab_id)
 
-    st.rerun()
+        #             # Bouton pour ajouter une nouvelle ligne contenant un seul bloc
+        #             if render_mode == "edition":
+        #                 if st.button(":material/arrow_downward:", key=f"{tab_id}_new_line", use_container_width=True):
+        #                     new_id = generate_unique_id()
+        #                     tab_data["layout"].append([{"id": new_id, "module": None, "sub_blocks": []}])
+        #                     st.rerun()
 
+        #     tab = tabs[-1]
+        #     if tab.button(":material/add: Add a new tab", key=f"{tab_id}_add_tab", use_container_width=False):
+        #         self.create_tab()
 
-@st.dialog(":material/warning: Caution !")
-def remove_check(id):
-    pages = get_pages()
-    page_name = pages[pages.index == id].page_name.values[0]
-    st.warning(f":material/warning: You are about to permanently remove the custom page : **{page_name}**. You will loose all information on this page. Close this popup if it was a mistake.")
-    if st.button(":material/check: Remove Page"):
-        remove(id)
-
-def visibility(id):
-    pages = get_pages()
-    page_name = pages[pages.index == id].page_name.values[0]
+        # if session.is_dev_mode():
+        #     st.write(st.session_state["session"]["content"]["pages"][self.page_id])
+        
