@@ -7,8 +7,8 @@ def generate_unique_id():
     return str(uuid.uuid4())
 
 container2 = {
-            "layout": [[None,None]],
-            "widths": [[0.1,0.9]],
+            "layout": [[None,None], [None,None]],
+            "widths": [[0.1,0.9], [0.9,0.1]],
             "block_id": generate_unique_id(),
             "block_type": "container"
         }
