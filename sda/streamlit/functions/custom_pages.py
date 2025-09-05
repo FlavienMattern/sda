@@ -8,16 +8,16 @@ def generate_unique_id():
 
 def default_block():
     return {
-            "layout": [[None,None], [None,None]],
-            "widths": [[0.6,0.4], [0.4,0.6]],
-            "block_id": [[generate_unique_id(),generate_unique_id()],[generate_unique_id(),generate_unique_id()]],
+            "layout": [[None]],
+            "widths": [[1]],
+            "block_id": [[generate_unique_id()]],
             "block_type": "container"
         }
 
 container_default = {
-            "layout": [[None,None],[default_block(),default_block(),None]],
-            "widths": [[0.5,0.5],[0.3,0.4,0.3]],
-            "block_id": [[generate_unique_id(),generate_unique_id()],[generate_unique_id(),generate_unique_id(),generate_unique_id()]],
+            "layout": [[None,None],[default_block()]],
+            "widths": [[0.5,0.5],[1]],
+            "block_id": [[generate_unique_id(),generate_unique_id()],[generate_unique_id()]],
             "block_type": "container"
         }
 
@@ -28,8 +28,14 @@ tab_default = {
             "block_type": "tab"
         }
 
+@st.dialog("Block Settings")
+def chg_settings(block_id, page_id):
+    st.info(f"{block_id}")
+    st.write(st.session_state["session"]["content"]["pages"][page_id]["modules"])
 
-def render_block(block):
+
+
+def render_block(block, page_id):
     if block["block_type"] == "container":
         Nrows = len(block["layout"])     
         for i in range(Nrows):
@@ -50,11 +56,12 @@ def render_block(block):
                         tile2_select = tile2[0].container()
                         tile2_settings = tile2[1].container()
                         tile2_select.selectbox(block_id, options=[None, "Map Stations", "Dataframe Stations"], key=f"selectmodule_{block_id}", index=0)
-                        tile2_settings.button(":material/dehaze:", key=f"settings_{block_id}", use_container_width=True)
+                        tile2_settings.button(":material/dehaze:", key=f"settings_{block_id}", use_container_width=True, on_click=chg_settings, args=(block_id,page_id))
+                        
                         # Dans les settings, afficher les largeurs de chaque block de la ligne pour pouvoir les modifier ensemble
                         # afficher aussi l'option pour l'affichage des bordures
                         if sub_block:
-                            render_block(sub_block)
+                            render_block(sub_block, page_id)
                         low_btn = st.columns([0.8, 0.2])
                         tile = low_btn[0].container()
                         tile.button(":material/add:", key=f"addrow_{block_id}", use_container_width=True)
@@ -63,9 +70,7 @@ def render_block(block):
                         
                     tile_btn.button(":material/arrow_forward:", key=f"addcol_{block_id}", use_container_width=True)
         
-        
-    
-    
+
 
 def load(page_id):
     page_content = st.session_state["session"]["content"]["pages"][page_id]
@@ -76,7 +81,7 @@ def load(page_id):
     if custom_layout == {}:
         custom_layout = container_default.copy()
         
-    render_block(custom_layout)
+    render_block(custom_layout, page_id)
     
     
     # if init_tabs:
