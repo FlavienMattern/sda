@@ -1,138 +1,320 @@
 import streamlit as st
-import os, uuid
-import numpy as np
+from sda.streamlit.functions import modules as m
+import uuid
 
 
 def generate_unique_id():
-    return str(uuid.uuid4())
+    return str(uuid.uuid4())  # raccourci, plus lisible dans l’UI
+
 
 def default_block():
     return {
+        "layout": [[None]],        # une seule case vide
+        "widths": [[1]],           # largeur 1
+        "block_id": [[generate_unique_id()]],  # ID unique
+        "block_type": "container"  # c’est bien un bloc de type container
+    }
+
+
+# def container_block():
+#     return {
+#         "layout": [[None]],
+#         "widths": [[1]],
+#         "block_id": [[generate_unique_id()]],
+#         "block_type": "container"
+#     }
+
+
+# def tab_block():
+#     return {
+#         "layout": [[default_block(), default_block()]],
+#         "widths": [[0.5, 0.5]],
+#         "block_id": [[generate_unique_id(), generate_unique_id()]],
+#         "block_type": "tab"
+#     }
+
+
+def add_sub_block(block, row_idx, col_idx, page_id):
+    block["layout"][row_idx][col_idx] = default_block()
+    block_id = block["layout"][row_idx][col_idx]["block_id"][0][0]
+    add_module(block_id, page_id)
+
+
+def add_column(block, row_idx, col_idx, page_id):
+    uuid = generate_unique_id()
+    block["layout"][row_idx].insert(col_idx+1, None)
+    block["widths"][row_idx].insert(col_idx+1, 1)
+    block["block_id"][row_idx].insert(col_idx+1, uuid)
+    add_module(uuid, page_id)
+
+
+def delete_block(block, row_idx, col_idx, page_id):
+
+    ids = ids_in_block(block["layout"][row_idx][col_idx])
+    ids.append(block["block_id"][row_idx][col_idx])
+
+    # Check if we are deleting the last block
+    layout = st.session_state["session"]["content"]["pages"][page_id]["custom_layout"]
+    if (len(layout["layout"]) == 1 and len(layout["layout"][0]) == 1 
+        and block is layout and row_idx == 0 and col_idx == 0):
+        popup_error("You cannot delete the last block.")
+        return
+
+    for id in ids:
+        remove_module(id, page_id)
+
+    block["layout"][row_idx].pop(col_idx)
+    block["widths"][row_idx].pop(col_idx)
+    block["block_id"][row_idx].pop(col_idx)
+    if len(block["layout"][row_idx]) == 0:  # ligne vide
+        block["layout"].pop(row_idx)
+        block["widths"].pop(row_idx)
+        block["block_id"].pop(row_idx)
+
+
+def get_block_by_id(block, block_id):
+    if "block_id" in block:
+        for i, row in enumerate(block["block_id"]):
+            for j, bid in enumerate(row):
+                if bid == block_id:
+                    return block, i, j
+                sub = block["layout"][i][j]
+                if isinstance(sub, dict):
+                    found = get_block_by_id(sub, block_id)
+                    if found:
+                        return found
+    return None
+
+
+def flatten(l):
+    result = []
+    for i in l:
+        if isinstance(i, list):
+            result += flatten(i)
+        else:
+            result.append(i)
+    return result
+
+
+def ids_in_block(block):
+    
+    ids = []
+
+    if block is None:
+        return ids
+
+    if "block_id" in block:
+        ids.append(block["block_id"])
+        for i, row in enumerate(block["block_id"]):
+            for j, bid in enumerate(row):
+                sub = block["layout"][i][j]
+                if isinstance(sub, dict):
+                    found = ids_in_block(sub)
+
+    ids = flatten(ids)
+
+    return ids
+
+
+def add_row_after(block, row_idx, page_id):
+    uuid = generate_unique_id()
+    if row_idx is None:
+        block = {
             "layout": [[None]],
             "widths": [[1]],
-            "block_id": [[generate_unique_id()]],
+            "block_id": [[uuid]],
             "block_type": "container"
         }
+    else:
+        block["layout"].insert(row_idx+1, [None])
+        block["widths"].insert(row_idx+1, [1])
+        block["block_id"].insert(row_idx+1, [uuid])
 
-container_default = {
-            "layout": [[None,None],[default_block()]],
-            "widths": [[0.5,0.5],[1]],
-            "block_id": [[generate_unique_id(),generate_unique_id()],[generate_unique_id()]],
-            "block_type": "container"
-        }
+    add_module(uuid, page_id)
 
-tab_default = {
-            "layout": [[None,None]],
-            "widths": [[None,None]],
-            "block_id": [[generate_unique_id(),generate_unique_id()]],
-            "block_type": "tab"
-        }
 
-@st.dialog("Block Settings")
+@st.dialog(":material/settings: Block Settings")
 def chg_settings(block_id, page_id):
-    st.info(f"{block_id}")
-    st.write(st.session_state["session"]["content"]["pages"][page_id]["modules"])
+    settings = st.session_state["session"]["content"]["pages"][page_id]["modules"][block_id]["settings"]
+    settings_new = settings.copy()
+
+    st.divider()
+
+    tile = st.columns([0.5, 0.5])
+
+    ### Icon
+    icon = tile[0].text_input("Icon", key=f"icon_{block_id}", value=settings.get("icon", ""), help="Icon of the Block (Material Symbols)")
+    if icon: settings_new["icon"] = icon
+    settings_new["icon_visible"] = tile[0].toggle("Show Icon", key=f"icon_visible_{block_id}", value=settings.get("title_visible", True), help="Show/Hide the Icon of the Block")
+
+
+    ### Title
+    title = tile[1].text_input("Title", key=f"title_{block_id}", value=settings.get("title", ""), help="Title of the Block")
+    if title: settings_new["title"] = title
+    settings_new["title_visible"] = tile[1].toggle("Show Title", key=f"title_visible_{block_id}", value=settings.get("title_visible", True), help="Show/Hide the Title of the Block")
+
+    full_title = ""
+    if settings_new["icon_visible"]: full_title += f"{settings_new['icon']} "
+    if settings_new["title_visible"]: full_title += settings_new["title"]
+    st.caption("Preview")
+    st.info(full_title)
+
+    ### Border
+    st.caption("")
+    settings_new["show_border"] = st.toggle("Show Border", key=f"show_border_{block_id}", value=settings.get("show_border", True), help="Show/Hide the Border of the Block")
+
+    ### Widths
+    st.divider()
+    st.write("Block Widths")
+    
+    parents, ii, _ = get_block_by_id(st.session_state["session"]["content"]["pages"][page_id]["custom_layout"], block_id)
+    widths = parents["widths"][ii]
+    ids = parents["block_id"][ii]
+    widths_new = widths.copy()
+
+    tile = st.columns(len(widths))
+    for i in range(len(widths)):
+        tile[i].text_input(" ", key=f"width_select_{block_id}_{i}", value=widths_new[i], label_visibility="collapsed")
+        widths_new[i] = float(st.session_state.get(f"width_select_{block_id}_{i}", widths[i]))
+
+    st.caption("Preview")
+    tile = st.columns(widths_new)
+    for i in range(len(widths_new)):
+        if block_id == ids[i]:
+            tile[i].success("")
+        else:
+            tile[i].info("")
+    
+
+    ### Height
+    st.caption("")
+    height = st.slider("Block Height (in pixels)", key=f"height_{block_id}", min_value=0, max_value=1000, step=10, value=settings.get("height", 400), help="Height of the Block in pixels")
+    if height:
+        settings_new["height"] = height
+
+
+    ### Save settings
+    # st.divider()
+    # st.write(settings_new)
+    tile = st.columns([0.3, 0.4, 0.3])
+    save = tile[1].button("Save", type="primary", args=(block_id, page_id), use_container_width=True)
+    if save:
+        st.session_state["session"]["content"]["pages"][page_id]["modules"][block_id]["settings"] = settings_new
+        parents["widths"][ii] = widths_new.copy()
+        st.rerun()
 
 
 
-def render_block(block, page_id):
-    if block["block_type"] == "container":
-        Nrows = len(block["layout"])     
+@st.dialog(":material/error: Error")
+def popup_error(msg):
+    st.error(msg)
+
+
+def render_block(block, page_id, edition_mode, page_content):
+    if block["block_type"] in ["container", "tab"]:
+        Nrows = len(block["layout"])
         for i in range(Nrows):
-            Ncols = len(block["layout"][i])
             cols = st.columns(block["widths"][i])
-            for j in range(Ncols):
+            for j in range(len(cols)):
                 sub_block = block["layout"][i][j]
                 block_id = block["block_id"][i][j]
-                with cols[j]:
-                    
-                    ### BLOCK CONTENT
-                    tile = cols[j].columns([0.9, 0.1])
-                    tile_content = tile[0].container()
-                    tile_btn = tile[1].container()
-                    
-                    with tile_content.container(border=True):
-                        tile2 = st.columns([0.9, 0.1])
-                        tile2_select = tile2[0].container()
-                        tile2_settings = tile2[1].container()
-                        tile2_select.selectbox(block_id, options=[None, "Map Stations", "Dataframe Stations"], key=f"selectmodule_{block_id}", index=0)
-                        tile2_settings.button(":material/dehaze:", key=f"settings_{block_id}", use_container_width=True, on_click=chg_settings, args=(block_id,page_id))
+
+                with cols[j].container(border=True):
+
+                    settings = page_content["modules"][block_id]["settings"]
+                    title = ""
+            
+                    if settings["icon_visible"]: title += f"{settings['icon']} "
+                    if settings["title_visible"]: title += settings["title"]
+
+                    if edition_mode:
+                        # 1st Block Row
+                        tile = st.columns([0.1, 0.8, 0.1])
+                        tile[0].button(":material/settings:", key=f"settings_{block_id}", use_container_width=True,
+                                    on_click=chg_settings, args=(block_id, page_id), help="Edit Block Settings")
+                        tile[1].caption(title)
+                        tile[2].button(":material/arrow_forward:", key=f"addcol_{block_id}", use_container_width=True,
+                                    on_click=lambda b=block,i=i,j=j:add_column(b,i,j,page_id), help="Add Block to the Right")
                         
-                        # Dans les settings, afficher les largeurs de chaque block de la ligne pour pouvoir les modifier ensemble
-                        # afficher aussi l'option pour l'affichage des bordures
-                        if sub_block:
-                            render_block(sub_block, page_id)
-                        low_btn = st.columns([0.8, 0.2])
-                        tile = low_btn[0].container()
-                        tile.button(":material/add:", key=f"addrow_{block_id}", use_container_width=True)
-                        tile = low_btn[1].container()
-                        tile.button(":material/delete:", key=f"delete_{block_id}", type="primary", use_container_width=True)
+                        # 2nd Block Row
+                        tile = st.columns([0.9, 0.1])
+                        tile[0].selectbox(f"{block_id}", options=[None, "Map Stations", "Dataframe Stations"],
+                                        key=f"selectmodule_{block_id}", label_visibility="collapsed", disabled=True)
+                        tile[1].button(":material/delete:", key=f"del_{block_id}", type="primary", use_container_width=True,
+                                    on_click=lambda b=block,i=i,j=j:delete_block(b,i,j,page_id), help="Delete Block")
                         
-                    tile_btn.button(":material/arrow_forward:", key=f"addcol_{block_id}", use_container_width=True)
-        
+                        # 3rd Block Row
+                        if sub_block is None:
+                            st.button(":material/arrow_downward:", key=f"addsub_{block_id}", use_container_width=True,
+                                    on_click=lambda b=block,i=i,j=j:add_sub_block(b,i,j, page_id), help="Add Row") 
+                        elif sub_block["layout"] == []:     
+                            st.button(":material/arrow_downward:", key=f"addsub_{block_id}", use_container_width=True,
+                                    on_click=lambda b=block,i=i,j=j:add_sub_block(b,i,j, page_id), help="Add Row") 
+                    else:
+                        if title not in ["", None] and title.isspace():
+                            st.subheader(title)
+                        show_module(block_id, page_id)
+
+                    if isinstance(sub_block, dict):
+                        render_block(sub_block, page_id, edition_mode, page_content)
+
+            if edition_mode:
+                st.button(":material/arrow_downward:", key=f"addrow_{block['block_id'][i][0]}", use_container_width=True,
+                    on_click=lambda b=block,i=i:add_row_after(b, i, page_id), help="Add Row")
 
 
 def load(page_id):
+
     page_content = st.session_state["session"]["content"]["pages"][page_id]
-    custom_layout = page_content["custom_layout"]
-    modules = page_content["modules"]
-    ##############################################################
+
+    tile = st.columns([0.9, 0.1])
+    edition_mode = tile[1].toggle(f"Edition Mode", key=f"edition_{page_id}", value=False)
+
+    if page_content["custom_layout"] == {}:
+        page_content["custom_layout"] = default_block()
+        add_module(page_content["custom_layout"]["block_id"][0][0], page_id)
+
+    render_block(page_content["custom_layout"], page_id, edition_mode, page_content)
+
+
+def add_module(block_id, page_id):
+    modules = st.session_state["session"]["content"]["pages"][page_id]["modules"]
+    modules[block_id] = {
+        "settings" : {
+            "title": "",
+            "icon": "",
+            "title_visible": True,
+            "icon_visible": True,
+            "show_border": True,
+            "height": 400,
+            "module": None,
+        },
+        "content" : {}
+    }
+
+
+def remove_module(block_id, page_id):
+    modules = st.session_state["session"]["content"]["pages"][page_id]["modules"]
+    del modules[block_id]
+
+def show_module(block_id, page_id):
+    module_dict = st.session_state["session"]["content"]["pages"][page_id]["modules"][block_id]
     
-    if custom_layout == {}:
-        custom_layout = container_default.copy()
-        
-    render_block(custom_layout, page_id)
-    
-    
-    # if init_tabs:
-        #     tab_list = self.get_tabs() + [":material/add_circle:"]
-        #     tabs = st.tabs(tab_list)
+    #############################################################
+    # Page Content
+    # import pickle as pkl
+    # import pandas as pd
 
-        #     for itab, tab_id in enumerate(tab_list[:-1]):
+    # inventory_file = "/media/flavien/WORK/these/tools/inventory_alsace.pkl"
+                    
+    # with open(inventory_file, "rb") as f:
+    #     inventory = pkl.load(f)
 
-        #         tab = tabs[itab]
+    # inventory = pd.DataFrame(inventory)
+    # inventory = inventory.drop(columns=["geometry"])
+    # inventory['Channels'] = inventory['Channels'].apply(lambda x: list(dict.fromkeys(x)))
 
-        #         with tab:
-        #             row_header = st.columns(2)
-        #             tile_options = row_header[0].container()
+    # ########### Configure Layout ###########
 
-        #             if tile_options.toggle("Edition mode", key=f"{tab_id}_edition", value=False):
-        #                 render_mode = "edition"
-        #             else:
-        #                 render_mode = "view"
-
-        #             if session.is_dev_mode():
-        #                 tile_options = row_header[1].container()
-        #                 if tile_options.toggle("[DEV] Show raw blocks", key=f"{tab_id}_show_blocks", value=True):
-        #                     self.show_block = True
-        #                 else:
-        #                     self.show_block = False
-
-        #             t = self.get_tab(tab_id)
-        #             tab_data = st.session_state["session"]["content"]["pages"][self.page_id]["tabs"][t.tab_id]
-        #             tab_data["layout"] = [row for row in tab_data["layout"] if row]
-
-        #             # Affichage des lignes de blocs racine
-        #             for row_idx, row in enumerate(tab_data["layout"]):
-        #                 if not row:
-        #                     continue  # ignore les lignes vides
-
-        #                 cols = st.columns(len(row))
-        #                 for col_idx, blk in enumerate(row):
-        #                     with cols[col_idx]:
-        #                         self.render_block(blk, row, col_idx, f"{tab_id}_row{row_idx}_col{col_idx}", render_mode, tab_id)
-
-        #             # Bouton pour ajouter une nouvelle ligne contenant un seul bloc
-        #             if render_mode == "edition":
-        #                 if st.button(":material/arrow_downward:", key=f"{tab_id}_new_line", use_container_width=True):
-        #                     new_id = generate_unique_id()
-        #                     tab_data["layout"].append([{"id": new_id, "module": None, "sub_blocks": []}])
-        #                     st.rerun()
-
-        #     tab = tabs[-1]
-        #     if tab.button(":material/add: Add a new tab", key=f"{tab_id}_add_tab", use_container_width=False):
-        #         self.create_tab()
-
-        # if session.is_dev_mode():
-        #     st.write(st.session_state["session"]["content"]["pages"][self.page_id])
-        
+    # tile = st.container()
+    # m.dataframe_stations(tile, inventory, height=module_dict["settings"]["height"])
