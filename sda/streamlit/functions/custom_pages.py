@@ -1,5 +1,6 @@
 import streamlit as st
 from sda.streamlit.functions import modules as m
+from sda.streamlit.functions import session
 import uuid
 
 
@@ -38,6 +39,7 @@ def add_sub_block(block, row_idx, col_idx, page_id):
     block["layout"][row_idx][col_idx] = default_block()
     block_id = block["layout"][row_idx][col_idx]["block_id"][0][0]
     add_module(block_id, page_id)
+    session.save()
 
 
 def add_column(block, row_idx, col_idx, page_id):
@@ -46,6 +48,7 @@ def add_column(block, row_idx, col_idx, page_id):
     block["widths"][row_idx].insert(col_idx+1, 1)
     block["block_id"][row_idx].insert(col_idx+1, uuid)
     add_module(uuid, page_id)
+    session.save()
 
 
 def delete_block(block, row_idx, col_idx, page_id):
@@ -70,6 +73,8 @@ def delete_block(block, row_idx, col_idx, page_id):
         block["layout"].pop(row_idx)
         block["widths"].pop(row_idx)
         block["block_id"].pop(row_idx)
+
+    session.save()
 
 
 def get_block_by_id(block, block_id):
@@ -131,6 +136,7 @@ def add_row_after(block, row_idx, page_id):
         block["block_id"].insert(row_idx+1, [uuid])
 
     add_module(uuid, page_id)
+    session.save()
 
 
 @st.dialog(":material/settings: Block Settings")
@@ -201,6 +207,7 @@ def chg_settings(block_id, page_id):
     if save:
         st.session_state["session"]["content"]["pages"][page_id]["modules"][block_id]["settings"] = settings_new
         parents["widths"][ii] = widths_new.copy()
+        session.save()
         st.rerun()
 
 
@@ -210,7 +217,17 @@ def popup_error(msg):
     st.error(msg)
 
 
+def set_module(block_id, page_id):
+    module_name = st.session_state[f"selectmodule_{block_id}"]
+    st.session_state["session"]["content"]["pages"][page_id]["modules"][block_id]["settings"]["module"] = module_name
+    st.session_state["session"]["content"]["pages"][page_id]["modules"][block_id]["settings"]["content"] = {}
+    session.save()
+
+
 def render_block(block, page_id, edition_mode, page_content):
+
+    options = [None] + list(m.MODULES.keys())
+
     if block["block_type"] in ["container", "tab"]:
         Nrows = len(block["layout"])
         for i in range(Nrows):
@@ -219,9 +236,17 @@ def render_block(block, page_id, edition_mode, page_content):
                 sub_block = block["layout"][i][j]
                 block_id = block["block_id"][i][j]
 
-                with cols[j].container(border=True):
+                settings = page_content["modules"][block_id]["settings"]
+                module = settings["module"]
 
-                    settings = page_content["modules"][block_id]["settings"]
+                if edition_mode:
+                    show_border=True
+                else:
+                    show_border = settings["show_border"]
+
+                with cols[j].container(border=show_border):
+
+                    idx = options.index(module)
                     title = ""
             
                     if settings["icon_visible"]: title += f"{settings['icon']} "
@@ -238,8 +263,8 @@ def render_block(block, page_id, edition_mode, page_content):
                         
                         # 2nd Block Row
                         tile = st.columns([0.9, 0.1])
-                        tile[0].selectbox(f"{block_id}", options=[None, "Map Stations", "Dataframe Stations"],
-                                        key=f"selectmodule_{block_id}", label_visibility="collapsed", disabled=True)
+                        tile[0].selectbox(f"{block_id}", options=options, index=idx, on_change=lambda bid=block_id:set_module(bid,page_id),
+                                        key=f"selectmodule_{block_id}", label_visibility="collapsed", disabled=False)
                         tile[1].button(":material/delete:", key=f"del_{block_id}", type="primary", use_container_width=True,
                                     on_click=lambda b=block,i=i,j=j:delete_block(b,i,j,page_id), help="Delete Block")
                         
@@ -251,7 +276,7 @@ def render_block(block, page_id, edition_mode, page_content):
                             st.button(":material/arrow_downward:", key=f"addsub_{block_id}", use_container_width=True,
                                     on_click=lambda b=block,i=i,j=j:add_sub_block(b,i,j, page_id), help="Add Row") 
                     else:
-                        if title not in ["", None] and title.isspace():
+                        if title not in ["", None] and not title.isspace():
                             st.subheader(title)
                         show_module(block_id, page_id)
 
@@ -296,23 +321,28 @@ def add_module(block_id, page_id):
 def remove_module(block_id, page_id):
     modules = st.session_state["session"]["content"]["pages"][page_id]["modules"]
     del modules[block_id]
+    session.save()
 
 def show_module(block_id, page_id):
     module_dict = st.session_state["session"]["content"]["pages"][page_id]["modules"][block_id]
+    module_name = module_dict["settings"]["module"]
+    if module_name is not None:
+        func = m.MODULES[module_name]
+        func(module_dict)
     
     #############################################################
     # Page Content
-    # import pickle as pkl
-    # import pandas as pd
+    import pickle as pkl
+    import pandas as pd
 
-    # inventory_file = "/media/flavien/WORK/these/tools/inventory_alsace.pkl"
+    inventory_file = "/media/flavien/WORK/these/tools/inventory_alsace.pkl"
                     
-    # with open(inventory_file, "rb") as f:
-    #     inventory = pkl.load(f)
+    with open(inventory_file, "rb") as f:
+        inventory = pkl.load(f)
 
-    # inventory = pd.DataFrame(inventory)
-    # inventory = inventory.drop(columns=["geometry"])
-    # inventory['Channels'] = inventory['Channels'].apply(lambda x: list(dict.fromkeys(x)))
+    inventory = pd.DataFrame(inventory)
+    inventory = inventory.drop(columns=["geometry"])
+    inventory['Channels'] = inventory['Channels'].apply(lambda x: list(dict.fromkeys(x)))
 
     # ########### Configure Layout ###########
 
