@@ -159,6 +159,8 @@ def chg_settings(block_id, page_id):
     if title: settings_new["title"] = title
     settings_new["title_visible"] = tile[1].toggle("Show Title", key=f"title_visible_{block_id}", value=settings.get("title_visible", True), help="Show/Hide the Title of the Block")
 
+    st.caption("For the list of available icons, please refer to the [Material Design Icons](https://fonts.google.com/icons?selected=Material+Icons).")
+
     full_title = ""
     if settings_new["icon_visible"]: full_title += f"{settings_new['icon']} "
     if settings_new["title_visible"]: full_title += settings_new["title"]
