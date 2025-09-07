@@ -102,7 +102,56 @@ def map_stations(module):
     event.selection
 
 
+# MODULES = {
+#     "Stations Metadata": dataframe_stations,
+#     "Stations Map":      map_stations,
+# }
+
 MODULES = {
-    "Stations Metadata": dataframe_stations,
-    "Stations Map":      map_stations,
+    "General": {
+        "Stations Metadata": dataframe_stations,
+        "Stations Map": map_stations,
+        "Module 3": map_stations,
+        "Module 4": map_stations,
+        "Module 5": map_stations,
+        "Module 6": map_stations,
+        "Module 7": map_stations,
+        "Module 8": map_stations,
+        "Module 9": map_stations,
+        "Module 10": map_stations,
+        "Module 11": map_stations,
+        "Module 12": map_stations,
+        "Module 13": map_stations,
+        "Module 14": map_stations,
+        "Module 15": map_stations,
+        "Module 16": map_stations,
+        "Module 17": map_stations,
+        "Module 18": map_stations,
+    },
+    "Menu 2": {
+        "Module 1": dataframe_stations
+    },
+    "Menu 3": {
+        "Module 1": dataframe_stations
+    },
+    "Menu 4": {
+        "Module 1": dataframe_stations
+    },
+    "Menu 6": {
+        "Module 1": dataframe_stations
+    },
+    "Menu 7": {
+        "Module 1": dataframe_stations
+    },
+    "Menu 8": {
+        "Module 1": dataframe_stations
+    },
+    "Menu 9": {
+        "Module 1": dataframe_stations
+    },
+    "Menu 10": {
+        "Module 1": dataframe_stations
+    }
 }
+
+MODULES_LIST = {key:value for menu in MODULES.keys() for key,value in MODULES[menu].items()}

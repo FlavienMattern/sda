@@ -124,8 +124,6 @@ def change_order(page_id, order):
 def clean(page_id):
     st.session_state["session"]["content"]["pages"][page_id]["modules"] = {}
     st.session_state["session"]["content"]["pages"][page_id]["custom_layout"] = {}
-    
-    print(st.session_state["session"]["content"]["pages"][page_id])
     session.save()
     st.rerun()
     

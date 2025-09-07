@@ -11,7 +11,7 @@ def generate_unique_id():
 def default_block():
     return {
         "layout": [[None]],        # une seule case vide
-        "widths": [[1]],           # largeur 1
+        "widths": [[1.0]],           # largeur 1
         "block_id": [[generate_unique_id()]],  # ID unique
         "block_type": "container"  # c’est bien un bloc de type container
     }
@@ -45,7 +45,7 @@ def add_sub_block(block, row_idx, col_idx, page_id):
 def add_column(block, row_idx, col_idx, page_id):
     uuid = generate_unique_id()
     block["layout"][row_idx].insert(col_idx+1, None)
-    block["widths"][row_idx].insert(col_idx+1, 1)
+    block["widths"][row_idx].insert(col_idx+1, 1.0)
     block["block_id"][row_idx].insert(col_idx+1, uuid)
     add_module(uuid, page_id)
     session.save()
@@ -126,13 +126,13 @@ def add_row_after(block, row_idx, page_id):
     if row_idx is None:
         block = {
             "layout": [[None]],
-            "widths": [[1]],
+            "widths": [[1.0]],
             "block_id": [[uuid]],
             "block_type": "container"
         }
     else:
         block["layout"].insert(row_idx+1, [None])
-        block["widths"].insert(row_idx+1, [1])
+        block["widths"].insert(row_idx+1, [1.0])
         block["block_id"].insert(row_idx+1, [uuid])
 
     add_module(uuid, page_id)
@@ -180,7 +180,7 @@ def chg_settings(block_id, page_id):
 
     tile = st.columns(len(widths))
     for i in range(len(widths)):
-        tile[i].text_input(" ", key=f"width_select_{block_id}_{i}", value=widths_new[i], label_visibility="collapsed")
+        tile[i].number_input(" ", key=f"width_select_{block_id}_{i}", value=widths_new[i], label_visibility="collapsed", step=0.1)
         widths_new[i] = float(st.session_state.get(f"width_select_{block_id}_{i}", widths[i]))
 
     st.caption("Preview")
@@ -217,8 +217,8 @@ def popup_error(msg):
     st.error(msg)
 
 
-def set_module(block_id, page_id):
-    module_name = st.session_state[f"selectmodule_{block_id}"]
+def set_module(block_id, page_id, itab):
+    module_name = st.session_state[f"selectmodule_{block_id}_{itab}"]
     st.session_state["session"]["content"]["pages"][page_id]["modules"][block_id]["settings"]["module"] = module_name
     st.session_state["session"]["content"]["pages"][page_id]["modules"][block_id]["settings"]["content"] = {}
     session.save()
@@ -226,7 +226,7 @@ def set_module(block_id, page_id):
 
 def render_block(block, page_id, edition_mode, page_content):
 
-    options = [None] + list(m.MODULES.keys())
+    # options = [None] + list(m.MODULES.keys())
 
     if block["block_type"] in ["container", "tab"]:
         Nrows = len(block["layout"])
@@ -246,7 +246,7 @@ def render_block(block, page_id, edition_mode, page_content):
 
                 with cols[j].container(border=show_border):
 
-                    idx = options.index(module)
+                    # idx = options.index(module)
                     title = ""
             
                     if settings["icon_visible"]: title += f"{settings['icon']} "
@@ -263,8 +263,21 @@ def render_block(block, page_id, edition_mode, page_content):
                         
                         # 2nd Block Row
                         tile = st.columns([0.9, 0.1])
-                        tile[0].selectbox(f"{block_id}", options=options, index=idx, on_change=lambda bid=block_id:set_module(bid,page_id),
-                                        key=f"selectmodule_{block_id}", label_visibility="collapsed", disabled=False)
+                        # tile[0].selectbox(f"{block_id}", options=options, index=idx, on_change=lambda bid=block_id:set_module(bid,page_id),
+                        #                 key=f"selectmodule_{block_id}", label_visibility="collapsed", disabled=False)
+                        module_name = st.session_state["session"]["content"]["pages"][page_id]["modules"][block_id]["settings"]["module"]
+                        if module_name is None : module_name = "Select Module"
+                        with tile[0].popover(f"{module_name}", use_container_width=True):
+
+                            menus = list(m.MODULES.keys())
+                            tabs = st.tabs(menus)
+                            for itab, (tab, name) in enumerate(zip(tabs, menus)):
+                                with tab:
+                                    module_list = [None]+list(m.MODULES[name].keys())
+                                    st.pills(" ", module_list, key=f"selectmodule_{block_id}_{itab}",
+                                                    on_change=lambda bid=block_id, pid=page_id, it=itab: set_module(bid, pid, it),
+                                                    label_visibility="collapsed")
+                            
                         tile[1].button(":material/delete:", key=f"del_{block_id}", type="primary", use_container_width=True,
                                     on_click=lambda b=block,i=i,j=j:delete_block(b,i,j,page_id), help="Delete Block")
                         
@@ -327,7 +340,7 @@ def show_module(block_id, page_id):
     module_dict = st.session_state["session"]["content"]["pages"][page_id]["modules"][block_id]
     module_name = module_dict["settings"]["module"]
     if module_name is not None:
-        func = m.MODULES[module_name]
+        func = m.MODULES_LIST[module_name]
         func(module_dict)
     
     #############################################################
