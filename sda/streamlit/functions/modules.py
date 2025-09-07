@@ -22,7 +22,6 @@ def dataframe_stations(module):
     inventory = inventory.drop(columns=["geometry"])
     inventory['Channels'] = inventory['Channels'].apply(lambda x: list(dict.fromkeys(x)))
 
-    st.subheader(":material/data_table: Station Metadata")
     st.dataframe(inventory, height=module["settings"]["height"])
 
 
@@ -53,8 +52,6 @@ def map_stations(module):
 
     lat_col="Latitude"
     lon_col="Longitude"
-
-    st.subheader(":material/map_search: Station Map")
 
     ICON_URL = "https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/icon-atlas.png"
     icon_mapping = {
