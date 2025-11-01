@@ -13,6 +13,7 @@ from sda.core.date_utils import get_day
 from sda.core.stations_define import ReadListOfStation
 import sda.process.xcorr_noise.PreProcessingModules.tracesPreProcessing as PreProcessing
 from sda.core.logs import add_log
+import traceback
 
 import time
 import shutil
@@ -132,11 +133,13 @@ def CorrelationParallel(day, config):
         comp2 = comp[1]
         config["ComponentFirstStation"] = comp1
         config["ComponentSecondStation"] = comp2
-        # try:
-        makeCorrFromDirectoryTraces(config)
-        # except:
-        #     print(f"error during corr {day}, skipping...")
-        #     continue
+        try:
+            makeCorrFromDirectoryTraces(config)
+        except:
+            msg = f"An error occurred while correlating data for day {day} and {comp} components. Skipping day.\n"
+            msg += traceback.format_exc()
+            add_log(msg, level="error")
+            continue
     add_log(f"End Correlating day {day.strftime('%Y-%m-%d')}")
     
     # Removing preprocessed files
