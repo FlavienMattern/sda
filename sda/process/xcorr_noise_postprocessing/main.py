@@ -22,7 +22,6 @@ from sda.core.stations_define import MakeCouplesOfStation
 from sda.process.xcorr_noise_postprocessing.CorrelationsPostProcessing import CorrFilter
 from sda.process.xcorr_noise_postprocessing.Stack import Stack
 from sda.core.logs import add_log
-
 import traceback
 
 
@@ -125,7 +124,6 @@ def xcorr_noise_postprocessing(
 
     add_log("#"*50, level="info")
     add_log("Start process: xcorr_noise_postprocessing", level="info")
-
     SaveDirectory = os.path.join(outputPath, "xcorr_noise")
     SaveDirectoryPostProcess = os.path.join(outputPath, "xcorr_noise_postprocessing")
     
