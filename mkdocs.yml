@@ -67,8 +67,8 @@ nav:
       - sda.core.function1: core/function1.md
       - sda.core.inversion: core/inversion.md
   - sda.process:
-      - sda.process.download_data: process/download_data.md
-      - sda.process.scan_data: process/scan_data.md
-      - sda.process.xcorr_noise: process/xcorr_noise.md
-      - sda.process.xcorr_noise_postprocessing: process/xcorr_noise_postprocessing.md
-      - sda.process.xcorr_noise_monitoring: process/xcorr_noise_monitoring.md
+      - download_data: process/download_data.md
+      - scan_data: process/scan_data.md
+      - xcorr_noise: process/xcorr_noise.md
+      - xcorr_noise_postprocessing: process/xcorr_noise_postprocessing.md
+      - xcorr_noise_monitoring: process/xcorr_noise_monitoring.md
