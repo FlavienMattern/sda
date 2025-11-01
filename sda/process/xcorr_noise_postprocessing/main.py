@@ -17,17 +17,23 @@ from multiprocessing import Pool
 from functools import partial
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import sda.functions.config as conf
-from sda.functions.stations_define import MakeCouplesOfStation
-from sda.xcorr_noise_postprocessing.Stack import Stack
-from sda.xcorr_noise_postprocessing.CorrelationsPostProcessing import CorrFilter
+import sda.core.config as conf
+from sda.core.stations_define import MakeCouplesOfStation
+from sda.process.xcorr_noise_postprocessing.CorrelationsPostProcessing import CorrFilter
+from sda.process.xcorr_noise_postprocessing.Stack import Stack
+from sda.core.logs import add_log
+
+import traceback
 
 
 def PostProcessingPair(pairs, config):
     sta1 = pairs[0]
     sta2 = pairs[1]
-    stack = config["StackDays"]
     
+    # TODO : 
+    # Maxlag = max(abs(lag)) dans le vecteur temps de la corrélation
+    # NewFrequence = len(lag) / Maxlag (ou len(lag)+1) ?
+    # comme ça pas besoin de les mettre en input
     lagtime = np.arange(-config["Maxlag"] / config["NewFrequence"],
                         config["Maxlag"] / config["NewFrequence"] + 1./config["NewFrequence"],
                         1./config["NewFrequence"])
@@ -36,7 +42,6 @@ def PostProcessingPair(pairs, config):
     dayEnd = datetime.strptime(config["endtime"], "%Y-%m-%d")
     NofDays = (dayEnd - dayStart).days
     day_str = [(dayStart + timedelta(days=i)).strftime("%Y/%j") for i in range(NofDays)]
-    
     
     ### Loading Data and format with nan gaps
     data = {}
@@ -76,6 +81,9 @@ def PostProcessingPair(pairs, config):
                 try:
                     data_comp = CorrFilter(time, lagtime, data_comp, config)
                 except:
+                    msg = f"An error occurred while applying SVD-Wiener on pair {sta1}-{sta2}. Skipping pair.\n"
+                    msg += traceback.format_exc()
+                    add_log(msg, level="error")
                     continue
             
             ### Stacking correlations
@@ -84,18 +92,14 @@ def PostProcessingPair(pairs, config):
 
 
 def PostProcessingPoolHandler(pairs, config):
-    # Utilisation de ThreadPoolExecutor pour la parallélisation
     with ThreadPoolExecutor(max_workers=config["NumberOfProcesses"]) as executor:
-        # Soumission des tâches avec les arguments supplémentaires
         futures = [executor.submit(PostProcessingPair, pair, config) for pair in pairs]
-        
-        # Utilisation de tqdm pour la barre de progression
         for future in tqdm(as_completed(futures), total=len(futures), desc=datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " PostProcessing  "):
             future.result()
                 
 
 
-def run(
+def xcorr_noise_postprocessing(
     outputPath,
     starttime,
     endtime,
@@ -111,6 +115,28 @@ def run(
     StackOverlap = 0,
     minDays = 1,
 ):
+    """_summary_
+
+    Args:
+        outputPath (_type_): _description_
+        starttime (_type_): _description_
+        endtime (_type_): _description_
+        NewFrequence (_type_): _description_
+        Maxlag (_type_): _description_
+        NumberOfProcesses (int, optional): _description_. Defaults to 1.
+        stations (list, optional): _description_. Defaults to [].
+        doSVDWiener (bool, optional): _description_. Defaults to False.
+        SVDThreshold (int, optional): _description_. Defaults to 15.
+        WienerFiltTime (int, optional): _description_. Defaults to 5.
+        WienerFiltLagTime (int, optional): _description_. Defaults to 5.
+        StackDays (int, optional): _description_. Defaults to 10.
+        StackOverlap (int, optional): _description_. Defaults to 0.
+        minDays (int, optional): _description_. Defaults to 1.
+    """
+
+    add_log("#"*50, level="info")
+    add_log("Start process: xcorr_noise_postprocessing", level="info")
+
     SaveDirectory = os.path.join(outputPath, "xcorr_noise")
     SaveDirectoryPostProcess = os.path.join(outputPath, "xcorr_noise_postprocessing")
     
@@ -133,6 +159,13 @@ def run(
         "minDays" : minDays
     }
     config = conf.update(config)
+    add_log("Configuration parameters:", level="info")
+    for key in config:
+        add_log(f"  - {key} : {config[key]}", level="info")
              
     pairs = MakeCouplesOfStation(config)
+    add_log("Starting postprocessing of ambient noise correlations...", level="info")
     PostProcessingPoolHandler(pairs, config)
+
+    add_log("End process: xcorr_noise_postprocessing", level="info")
+    add_log("#"*50, level="info")

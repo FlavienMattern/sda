@@ -8,7 +8,6 @@ from .ppsd import ppsd
 # Noise correlation methods
 from .xcorr_noise import xcorr_noise
 from .xcorr_noise2 import xcorr_noise2
-from .xcorr_noise_postprocessing import xcorr_noise_postprocessing
 from .xcorr_noise_postprocessing2 import xcorr_noise_postprocessing2
 from .xcorr_noise_monitoring import xcorr_noise_monitoring
 
