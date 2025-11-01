@@ -30,14 +30,6 @@ def PostProcessingPair(pairs, config):
     sta1 = pairs[0]
     sta2 = pairs[1]
     
-    # TODO : 
-    # Maxlag = max(abs(lag)) dans le vecteur temps de la corrélation
-    # NewFrequence = len(lag) / Maxlag (ou len(lag)+1) ?
-    # comme ça pas besoin de les mettre en input
-    lagtime = np.arange(-config["Maxlag"] / config["NewFrequence"],
-                        config["Maxlag"] / config["NewFrequence"] + 1./config["NewFrequence"],
-                        1./config["NewFrequence"])
-    
     dayStart = datetime.strptime(config["starttime"], "%Y-%m-%d")
     dayEnd = datetime.strptime(config["endtime"], "%Y-%m-%d")
     NofDays = (dayEnd - dayStart).days
@@ -66,6 +58,15 @@ def PostProcessingPair(pairs, config):
             
             cur = loadmat(file)
             corr_dict[comp] = cur['corr'][0]
+
+        # TODO : 
+        # Maxlag = max(abs(lag)) dans le vecteur temps de la corrélation
+        # NewFrequence = len(lag) / Maxlag (ou len(lag)+1) ?
+        # comme ça pas besoin de les mettre en input
+        if "lagtime" not in locals():
+            lagtime = np.arange(-config["Maxlag"] / config["NewFrequence"],
+                                config["Maxlag"] / config["NewFrequence"] + 1./config["NewFrequence"],
+                                1./config["NewFrequence"])
             
         for comp in corr_dict.keys():
             if comp in data : data[comp][:,i] = corr_dict[comp]
