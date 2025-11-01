@@ -11,8 +11,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # Local modules
-import sda.functions.database as database
-import sda.functions.jobs as jb
+import sda.core.database as database
+import sda.core.jobs as jb
 
 
 
