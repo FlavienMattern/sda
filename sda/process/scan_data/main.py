@@ -215,15 +215,3 @@ def scan_data(outputPath, dataPath=None, databasePath=None, overwrite=True, Numb
 
     add_log("End process: scan_data", level="info")
     add_log("#"*50, level="info")
-
-if __name__ == "__main__":
-    """
-    ### Exemple d'utilisation
-    run(
-        DataPath         = "/media/flavien/DATA/FLAVIEN/these/sample_dataset",
-        DataBaseSavePath = "/media/flavien/WORK/seismo-tools/results/scan_data/database.db",
-        overwrite        = True,
-        chunk_size       = 10
-    )
-    """
-    pass
