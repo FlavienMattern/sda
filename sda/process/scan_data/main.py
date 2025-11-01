@@ -109,7 +109,7 @@ def scan_data(outputPath, dataPath=None, databasePath=None, overwrite=True, Numb
 
     Parameters:
         outputPath (str): Output folder where all results will be saved.
-        dataPath (str, optional): Folder where all the dataset is saved. You don't need to specify it was collected by [`download_data()`][process.download_data] at previous step.
+        dataPath (str, optional): Folder where all the dataset is saved. You don't need to specify it was collected by [`download_data()`][sda.process.download_data] at previous step.
         databasePath (str, optional): Database file path. By default (`None`), the database file is placed at `<outputPath>/database.db`.
         overwrite (bool, optional): Overwrite the database if exists.
         NumberOfProcesses (int, optional): Number of workers to scan the dataset in parallel. Use it if your disk has good performances (instead it could lead to IO-Bound issues).
