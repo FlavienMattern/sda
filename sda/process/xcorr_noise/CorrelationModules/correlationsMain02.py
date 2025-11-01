@@ -30,11 +30,7 @@ def makeCorrFromDirectoryTraces(config):
     try:
         parameters = correlationsGetParam.ParamWithLastDateCompute(config)
         correlation = correlationsCorrelation.CorrelationForSublen(config)
-        
-        if parameters.FormatSave == 'mat':
-            writeCorr = correlationsWriter.WriterOneCorrelationMat(parameters)
-        elif parameters.FormatSave == 'npy':
-            writeCorr = correlationsWriter.WriterOneCorrelationNpy(parameters)
+        writeCorr = correlationsWriter.WriterOneCorrelation(parameters)
 
         if parameters.FormatTrace == 'mat':
             loadTrace = correlationsLoader.LoaderOneTraceMat(parameters, acorr=False)
@@ -45,12 +41,7 @@ def makeCorrFromDirectoryTraces(config):
         # print(msg)
         raise
     
-    if parameters.TypeListStations == 'oneList':
-        generatorCouple = correlationsGeneratorPath.GeneratorPathSaveOneDateCoupleArraysOneList(param=parameters, loader=loadTrace, writer=writeCorr)
-    elif parameters.TypeListStations == 'twoLists':
-        generatorCouple = correlationsGeneratorPath.GeneratorPathSaveOneDateCoupleArraysTwoLists(param=parameters, loader=loadTrace, writer=writeCorr)
-    else:
-        sys.exit()
+    generatorCouple = correlationsGeneratorPath.GeneratorPathSaveOneDateCoupleArraysOneList(param=parameters, loader=loadTrace, writer=writeCorr)
         
     if config['maxInterDistance'] != None:
         for path, subdirs, files in os.walk(config['inventory_path']):
@@ -66,16 +57,16 @@ def makeCorrFromDirectoryTraces(config):
     NumberOfCorrOneDate = 0
     NumberOfCorrTotal = 0
 
+    fs = config["NewFrequence"]
+    max_lag = int(config["Maxlag"] / fs)
+
     for DirSave, FileSave, date, firstTrace, secondTrace in generatorCouple:
 
-        DirSave = os.path.normpath(DirSave)
         DirSave_split = DirSave.split(os.sep)
-        date_str = DirSave_split[-3] + "/" + DirSave_split[-2]
-        date_str = datetime.strptime(date_str, '%Y/%j')
-        date_str = date_str.strftime('%Y-%m-%d')
-        comp = DirSave_split[-4].split("_")[0]
-        sta1 = FileSave.split(".")[0].split("_")[0]
-        sta2 = FileSave.split(".")[0].split("_")[-1]
+        DirSave_split = DirSave.split(os.sep)
+        date_str = os.path.basename(FileSave).split(".")[0]
+        sta1, sta2 = DirSave_split[-1].split("-")
+        comp = DirSave_split[-2]
         
         if config['maxInterDistance'] != None:
             lat1 = inventory.select(station=sta1)[0][0].latitude
@@ -95,7 +86,7 @@ def makeCorrFromDirectoryTraces(config):
         
         # Keep Correlation if at least perc % of subcorr retained
         if perc >=config['minSubCorrKeep']:
-            writeCorr.writeOneCorrelation(DirSave, FileSave, corr)
+            writeCorr.save_xcorr(DirSave, FileSave, corr, max_lag, fs)
         NumberOfCorrOneDate += 1
 
         if date is not None:
@@ -141,11 +132,11 @@ def CorrelationParallel(day, config):
         comp2 = comp[1]
         config["ComponentFirstStation"] = comp1
         config["ComponentSecondStation"] = comp2
-        try:
-            makeCorrFromDirectoryTraces(config)
-        except:
-            print(f"error during corr {day}, skipping...")
-            continue
+        # try:
+        makeCorrFromDirectoryTraces(config)
+        # except:
+        #     print(f"error during corr {day}, skipping...")
+        #     continue
     add_log(f"End Correlating day {day.strftime('%Y-%m-%d')}")
     
     # Removing preprocessed files

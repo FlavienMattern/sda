@@ -19,9 +19,11 @@ Module correlationsWriter
 """
 
 from sda.process.xcorr_noise.CorrelationModules import correlationsExceptions
+from datetime import datetime
 import os
 import scipy.io
-import numpy
+from sda.core.logs import add_log
+import traceback
 
 
 
@@ -42,128 +44,39 @@ class WriterCorrelation(object):
         try:
             self.FormatSave = param.FormatSave
             self.SaveDirectory = param.SaveDirectory
-            self.DirCorrComponent = param.ComponentFirstStation + param.ComponentSecondStation + '_CORRC1' 
-            self.DirSaveCompo = self.SaveDirectory + os.sep + self.DirCorrComponent
+            self.DirCorrComponent = param.ComponentFirstStation + param.ComponentSecondStation
+            self.DirSaveCompo = os.path.join(self.SaveDirectory, self.DirCorrComponent)
         except AttributeError:
             raise correlationsExceptions.ErrorParamAttribute(classBadAttribute='WriterCorrelation', ListMissingAttribute=['SaveDirectory', 'ComponentFirstStation', 'ComponentSecondStation'])
-        self.SeparatorDirStation = '_CORRC1'
-        self.SeparatorCoupleStations = '_CORRC1_'
+
         
     def getDirAndFileSaveCorrelation(self, Date, FirstStation, SecondStation):
         """
         Return a path directory dependent of the date and a file name dependent of the a couple of stations.  
         """
-        DirSave = self.DirSaveCompo + os.sep + Date + os.sep + FirstStation + self.SeparatorDirStation + os.sep
-        FileSave = FirstStation + self.SeparatorCoupleStations + SecondStation + '.' + self.FormatSave
+        DirSave = os.path.join(self.DirSaveCompo, f"{FirstStation}-{SecondStation}")
+        day_str = datetime.strptime(Date, "%Y/%j").strftime("%Y-%m-%d")
+        FileSave = os.path.join(DirSave, f"{day_str}.mat")
         return DirSave, FileSave
     
-    def tryMakeDirectories(self, DirSave):
-        """
-        Write all the directories defined in the path directory
-        with right 770 if they do not exist.
         
-        :Parameter:
-            
-            **DirSave**: str
-                The path directory.
-                
-        .. Note::
-            If it is not possible, catch the exception and print a message. 
-            (Try twice for concurrency problems.)
-        """
-        if not os.path.isdir(DirSave):
-            try: 
-                os.makedirs(DirSave, 0o770)
-            except:
-                try:
-                    os.makedirs(DirSave, 0o770)
-                except:
-                    pass
-        
-    def writeOneCorrelation(self):
-        """
-        Abstract method, not implemented.
-        """
-        raise NotImplementedError#Abstract method
+    
+class WriterOneCorrelation(WriterCorrelation):
 
-class WriterOneCorrelationNpy(WriterCorrelation):
-    """
-    :Base class: :class:`WriterCorrelation`
-        Inherits all attibutes of the base class.
-        
-    :Parameter:
-    
-        **param** : obj
-        
-            Object with attributes  *FormatSave*, *SaveDirectory*, *ComponentFirstStation*, *ComponentSecondStation*.
+    def save_xcorr(self, DirSave, FileSave, corr, max_lag, fs):
+
+        os.makedirs(DirSave, exist_ok=True)
+
+        try:
+            scipy.io.savemat(os.path.join(DirSave, FileSave),
+                             {"corr":corr, "max_lag":max_lag,"fs": fs})
+
+        except:
+            msg = f"Cannot save correlation: {os.path.join(DirSave, FileSave)}\n"
+            msg += traceback.format_exc()
+            add_log(msg, level="error")
+
             
-    """
-    def writeOneCorrelation(self, DirSave, FileSave, corr):
-        """
-        Save a correlation with the file path given and the format numpy (.npy).
-        
-        :Parameters:
-        
-            **corr**: numpy array
-                The correlation to be saved.
-        
-            **DirSave**: str
-                Directory name to save the trace.
-                
-            **FileSave**: str
-                File name of the trace saved.
-        
-        (Try twice to save the correlations for concurrency problems.)
-        """
-        self.tryMakeDirectories(DirSave)
-        try:
-            numpy.save(DirSave + FileSave, corr)
-            # print("[INFO] Save Correlation : {}{}".format(DirSave, FileSave))
-        except:
-            try:
-                print('try second time to save the correlation in: ' + DirSave + FileSave)
-                numpy.save(DirSave + FileSave, corr)
-            except:
-                print('cannot save the correlation:' + DirSave + FileSave)
-    
-class WriterOneCorrelationMat(WriterCorrelation):
-    """
-    :Base class: :class:`WriterCorrelation`
-        Inherits all attibutes of the base class.
-    
-    :Parameter:
-    
-        **param** : obj
-        
-            Object with attributes  *FormatSave*, *SaveDirectory*, *ComponentFirstStation*, *ComponentSecondStation*.
-    """
-    def writeOneCorrelation(self, DirSave, FileSave, corr):
-        """
-        Save a correlation with the file path given and the format matlab (.mat).
-        
-        :Parameters:
-        
-            **corr**: numpy array
-                The correlation to be saved.
-        
-            **DirSave**: str
-                Directory name to save the trace.
-                
-            **FileSave**: str
-                File name of the trace saved.
-        
-        (Try twice to save the correlations for concurrency problems.)
-        """
-        self.tryMakeDirectories(DirSave)
-        try:
-            scipy.io.savemat(os.path.join(DirSave, FileSave), {'corr':corr})
-            # print("[INFO] Save Correlation : {}{}".format(DirSave, FileSave))
-        except:
-            try:
-                print('try second time to save the correlation in: ' + DirSave + FileSave)
-                scipy.io.savemat(os.path.join(DirSave, FileSave), {'corr':corr})
-            except:
-                print('cannot save the correlation:' + DirSave + FileSave)
 
 if __name__ == '__main__':
     pass      
