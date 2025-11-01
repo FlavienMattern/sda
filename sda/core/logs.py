@@ -44,7 +44,7 @@ def _listener_configurer(log_dir, log_name):
     root = logging.getLogger()
     handler = logging.FileHandler(log_file, mode="a")
     formatter = logging.Formatter(
-        "[%(asctime)s] [%(levelname)s] %(message)s"
+        "[%(asctime)s] [%(levelname)s] |%(processName)s| %(message)s"
     )
     handler.setFormatter(formatter)
     root.addHandler(handler)
