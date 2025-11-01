@@ -48,6 +48,7 @@ plugins:
           options:
             show_source: true
             show_root_toc_entry: false
+            docstring_style: google
             merge_init_into_class: true
             extra:
               show_signature: true
