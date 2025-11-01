@@ -69,6 +69,5 @@ nav:
   - sda.process:
       - sda.process.scan_data: process/scan_data.md
       - sda.process.xcorr_noise: process/xcorr_noise.md
-      - sda.process.method2: process/method2.md
+      - sda.process.xcorr_noise_postprocessing: process/xcorr_noise_postprocessing.md
       - sda.process.method3: process/method3.md
-
