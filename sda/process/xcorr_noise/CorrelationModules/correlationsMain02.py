@@ -23,7 +23,6 @@ from tqdm import tqdm
 import numpy as np
 from obspy import read_inventory
 import geopy.distance
-import traceback
 
 
 def makeCorrFromDirectoryTraces(config):
