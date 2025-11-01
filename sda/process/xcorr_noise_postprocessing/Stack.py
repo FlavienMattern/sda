@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import time
 import pickle as pkl
+from sda.core.logs import add_log
 
 
 
@@ -74,11 +75,8 @@ def Stack(time, lagtime, data, sta1, sta2, comp, config):
     if np.count_nonzero(~np.isnan(StackDict["array"])) != 0:        
         savepath = os.path.join(SaveDirectory,"{:03d}days/{}".format(StackDay, comp))
         filename = os.path.join(savepath,"{}-{}.pkl".format(sta1,sta2))
-        
-        try:
-            os.makedirs(savepath)
-        except:
-            pass
-        
+        os.makedirs(savepath, exist_ok=True)
         with open(filename, 'wb') as f:
             pkl.dump(StackDict, f)
+    else:
+        add_log(f"Not enough data for {sta1}-{sta2} ({comp}). Results not saved.", level="warning")
