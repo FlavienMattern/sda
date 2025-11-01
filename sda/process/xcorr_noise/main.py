@@ -2,9 +2,10 @@
 import os
 
 # Local modules
-# import sda.functions.config as conf
-# import sda.xcorr_noise.PreProcessingModules.tracesScan as Scan
-# from sda.xcorr_noise.CorrelationModules.correlationsMain02 import Correlation
+from sda.core.logs import add_log
+import sda.core.config as conf
+import sda.process.xcorr_noise.PreProcessingModules.tracesScan as Scan
+from sda.process.xcorr_noise.CorrelationModules.correlationsMain02 import Correlation
 
 
 def xcorr_noise(
@@ -119,65 +120,81 @@ def xcorr_noise(
         ```
     """
     
-    print("xcorr_noise: Starting cross-correlation noise processing...")
+    add_log("#"*50, level="info")
+    add_log("Start process: xcorr_noise", level="info")
     
-    # # Prepare files
-    # if not os.path.isdir(outputPath): os.makedirs(outputPath)
-    # if DataPath == None:
-    #     DataPath = os.path.join(outputPath, "data", "waveforms")
-    # if inventory_path == None:
-    #     inventory_path = os.path.join(outputPath, "data", "inventory")
-    # if databasePath == None:
-    #     databasePath = os.path.join(outputPath, "database.db")
-    # SaveDirectory = os.path.join(outputPath, "xcorr_noise")
-    
-    # # Prepare config dictionary
-    # config = {
-    #     "DataPath" : DataPath,
-    #     "databasePath" : databasePath,
-    #     "SaveDirectory" : SaveDirectory,
-    #     "Components" : Components,
-    #     "CrossComponents" : CrossComponents,
-    #     "starttime" : starttime,
-    #     "endtime" : endtime,
-    #     "stations" : stations,
-    #     "NumberOfProcesses": NumberOfProcesses,
-    #     "doScan" : doScan,
-    #     "remove_response" : remove_response,
-    #     "inventory_path" : inventory_path,
-    #     "water_level" : water_level,
-    #     "response_prefilt" : response_prefilt,
-    #     "NewFrequence" : NewFrequence,
-    #     "numberOfSubTrace" : numberOfSubTrace,
-    #     "freqMin" : freqMin,
-    #     "freqMax" : freqMax,
-    #     "freqmin" : freqmin,
-    #     "factorTestStd" : factorTestStd,
-    #     "numberOfStd" : numberOfStd,
-    #     "factorReplaceWithStd" : factorReplaceWithStd,
-    #     "Convergence" : Convergence,
-    #     "ratioZero" : ratioZero,
-    #     "ratioE" : ratioE,
-    #     "do1bit" : do1bit,
-    #     "factorTestStdSeisme" : factorTestStdSeisme,
-    #     "divideFreq" : divideFreq,
-    #     "lengthBorder" : lengthBorder,
-    #     "HourFilter" : HourFilter,
-    #     "SaveSubLen" : SaveSubLen,
-    #     "AutoCorr" : AutoCorr,
-    #     "Maxlag" : Maxlag,
-    #     "LenTrace" : LenTrace,
-    #     "NumberSubLen" : numberOfSubTrace,
-    #     "minSubCorrKeep" : minSubCorrKeep,
-    #     "maxInterDistance": maxInterDistance,
-    #     "savePreProcessing": savePreProcessing,
-    #     "restricted_times": restricted_times
-    # }
-    # config = conf.update(config)
-    
-    # # Scan step
-    # config["ComponentStation"] = "Z"
-    # Scan.treatTracesFromDirectory(config)
+    # Prepare files
+    if not os.path.isdir(outputPath):
+        add_log(f"Output directory (outputPath = {outputPath}) doesn't exists. Creating the directory...", level="warning")
+        os.makedirs(outputPath)
 
-    # # PreProcessing + Correlation step
-    # Correlation(config)
+    if DataPath == None:
+        DataPath = os.path.join(outputPath, "data", "waveforms")
+    add_log(f"Dataset folder: {DataPath}", level="info")
+
+    if inventory_path == None:
+        inventory_path = os.path.join(outputPath, "data", "inventory")
+    add_log(f"Inventory folder: {inventory_path}", level="info")
+
+    if databasePath == None:
+        databasePath = os.path.join(outputPath, "database.db")
+    add_log(f"Database file: {databasePath}", level="info")
+    SaveDirectory = os.path.join(outputPath, "xcorr_noise")
+    add_log(f"Save correlations directory: {SaveDirectory}", level="info")
+    
+    # Prepare config dictionary
+    config = {
+        "DataPath" : DataPath,
+        "databasePath" : databasePath,
+        "SaveDirectory" : SaveDirectory,
+        "Components" : Components,
+        "CrossComponents" : CrossComponents,
+        "starttime" : starttime,
+        "endtime" : endtime,
+        "stations" : stations,
+        "NumberOfProcesses": NumberOfProcesses,
+        "doScan" : doScan,
+        "remove_response" : remove_response,
+        "inventory_path" : inventory_path,
+        "water_level" : water_level,
+        "response_prefilt" : response_prefilt,
+        "NewFrequence" : NewFrequence,
+        "numberOfSubTrace" : numberOfSubTrace,
+        "freqMin" : freqMin,
+        "freqMax" : freqMax,
+        "freqmin" : freqmin,
+        "factorTestStd" : factorTestStd,
+        "numberOfStd" : numberOfStd,
+        "factorReplaceWithStd" : factorReplaceWithStd,
+        "Convergence" : Convergence,
+        "ratioZero" : ratioZero,
+        "ratioE" : ratioE,
+        "do1bit" : do1bit,
+        "factorTestStdSeisme" : factorTestStdSeisme,
+        "divideFreq" : divideFreq,
+        "lengthBorder" : lengthBorder,
+        "HourFilter" : HourFilter,
+        "SaveSubLen" : SaveSubLen,
+        "AutoCorr" : AutoCorr,
+        "Maxlag" : Maxlag,
+        "LenTrace" : LenTrace,
+        "NumberSubLen" : numberOfSubTrace,
+        "minSubCorrKeep" : minSubCorrKeep,
+        "maxInterDistance": maxInterDistance,
+        "savePreProcessing": savePreProcessing,
+        "restricted_times": restricted_times
+    }
+    config = conf.update(config)
+    add_log("Configuration parameters:", level="info")
+    for key in config:
+        add_log(f"  - {key} : {config[key]}", level="info")
+    
+    # Scan step
+    config["ComponentStation"] = "Z"
+    Scan.treatTracesFromDirectory(config)
+
+    # PreProcessing + Correlation step
+    Correlation(config)
+    
+    add_log("End process: xcorr_noise", level="info")
+    add_log("#"*50, level="info")
