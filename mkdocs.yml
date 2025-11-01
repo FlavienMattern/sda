@@ -45,6 +45,8 @@ plugins:
       default_handler: python
       handlers:
         python:
+          import:
+            - path: .
           options:
             show_source: true
             show_root_toc_entry: false
