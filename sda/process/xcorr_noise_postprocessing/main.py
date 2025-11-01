@@ -33,40 +33,32 @@ def PostProcessingPair(pairs, config):
     dayStart = datetime.strptime(config["starttime"], "%Y-%m-%d")
     dayEnd = datetime.strptime(config["endtime"], "%Y-%m-%d")
     NofDays = (dayEnd - dayStart).days
-    day_str = [(dayStart + timedelta(days=i)).strftime("%Y/%j") for i in range(NofDays)]
+    day_str = [(dayStart + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(NofDays)]
+
+    # We get fs and max_lag from one of the files
+    for comp in ["ZZ", "ZN", "ZE", "NZ", "NN", "NE", "EZ", "EN", "EE"]:
+        folder = os.path.join(config["SaveDirectory"], comp, f"{sta1}-{sta2}")
+        if not os.path.isdir(folder): continue
+        for file in os.listdir(folder):
+            cur = loadmat(os.path.join(folder, file))
+            fs = cur['fs'][0][0]
+            max_lag = cur['max_lag'][0][0]
+            break
+    lagtime = np.arange(-max_lag, max_lag+1/fs, 1/fs)
     
     ### Loading Data and format with nan gaps
     data = {}
     time = []
     for i in range(len(day_str)):
-        
-        year = int(day_str[i].split("/")[0])
-        doy = int(day_str[i].split("/")[1])
-        time.append(datetime(year,1,1) + timedelta(days=doy-1))       
+        time.append(datetime.strptime(day_str[i], "%Y-%m-%d"))       
         corr_dict = {}        
         
         for comp in ["ZZ", "ZN", "ZE", "NZ", "NN", "NE", "EZ", "EN", "EE"]:
-        
-            file = os.path.join(config["SaveDirectory"],
-                                "{}_CORRC1".format(comp),
-                                day_str[i],
-                                "{}_CORRC1".format(sta1),
-                                "{}_CORRC1_{}.mat".format(sta1,sta2))
-            
-            
+            folder = os.path.join(config["SaveDirectory"], comp, f"{sta1}-{sta2}")
+            file = os.path.join(folder, f"{day_str[i]}.mat")
             if not os.path.isfile(file): continue
-            
             cur = loadmat(file)
             corr_dict[comp] = cur['corr'][0]
-
-        # TODO : 
-        # Maxlag = max(abs(lag)) dans le vecteur temps de la corrélation
-        # NewFrequence = len(lag) / Maxlag (ou len(lag)+1) ?
-        # comme ça pas besoin de les mettre en input
-        if "lagtime" not in locals():
-            lagtime = np.arange(-config["Maxlag"] / config["NewFrequence"],
-                                config["Maxlag"] / config["NewFrequence"] + 1./config["NewFrequence"],
-                                1./config["NewFrequence"])
             
         for comp in corr_dict.keys():
             if comp in data : data[comp][:,i] = corr_dict[comp]
@@ -104,8 +96,6 @@ def xcorr_noise_postprocessing(
     outputPath,
     starttime,
     endtime,
-    NewFrequence,
-    Maxlag,
     NumberOfProcesses=1,
     stations = [],
     doSVDWiener = False,
@@ -122,8 +112,6 @@ def xcorr_noise_postprocessing(
         outputPath (_type_): _description_
         starttime (_type_): _description_
         endtime (_type_): _description_
-        NewFrequence (_type_): _description_
-        Maxlag (_type_): _description_
         NumberOfProcesses (int, optional): _description_. Defaults to 1.
         stations (list, optional): _description_. Defaults to [].
         doSVDWiener (bool, optional): _description_. Defaults to False.
@@ -148,8 +136,6 @@ def xcorr_noise_postprocessing(
         "starttime" : starttime,
         "endtime" : endtime,
         "NumberOfProcesses": NumberOfProcesses,
-        "NewFrequence" : NewFrequence,
-        "Maxlag" : Maxlag,
         "stations" : stations,
         "doSVDWiener" : doSVDWiener,
         "SVDThreshold" : SVDThreshold,
