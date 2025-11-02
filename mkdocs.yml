@@ -1,8 +1,10 @@
-site_name: SDA
+site_name: Seismological Data Analysis (SDA)
 repo_url: https://github.com/FlavienMattern/sda.git
 
 theme:
   name: material
+  logo: images/logo.png
+  favicon: images/favicon.png
 
   ### Palette configuration
   palette:
@@ -30,14 +32,19 @@ theme:
 
   ### Features configuration
   features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
     - navigation.instant
     - navigation.instant.prefetch
+    - navigation.instant.progress
     - navigation.path
     - navigation.top
     - navigation.footer
     - toc.follow
     - toc.integrate
     - search.suggest
+    - search.highlight
 
 plugins:
   - search
@@ -64,12 +71,20 @@ extra_css:
 nav:
   - Home: index.md
   - Installation: installation.md
-  - sda.core:
-      - sda.core.function1: core/function1.md
-      - sda.core.inversion: core/inversion.md
-  - sda.process:
-      - download_data: process/download_data.md
-      - scan_data: process/scan_data.md
-      - xcorr_noise: process/xcorr_noise.md
-      - xcorr_noise_postprocessing: process/xcorr_noise_postprocessing.md
-      - xcorr_noise_monitoring: process/xcorr_noise_monitoring.md
+  - Tutorials:
+    - Getting started: tutorials/getting_started.md
+    - Dataset formatting: tutorials/dataset_format.md
+    - Computing PPSD: tutorials/ppsd.md
+    - Ambient Noise Correlations: tutorials/xcorr_noise.md
+    - Inverting dv/v: tutorials/invert_dvv.md
+  - SDA API:
+    - sda.core:
+        - sda.core.function1: core/function1.md
+        - sda.core.inversion: core/inversion.md
+    - sda.process:
+        - download_data: process/download_data.md
+        - scan_data: process/scan_data.md
+        - xcorr_noise: process/xcorr_noise.md
+        - xcorr_noise_postprocessing: process/xcorr_noise_postprocessing.md
+        - xcorr_noise_monitoring: process/xcorr_noise_monitoring.md
+  - References: references.md
