@@ -180,20 +180,20 @@ def scan_data(outputPath, dataPath=None, databasePath=None, overwrite=True, Numb
     Nremoved = remove_deleted_files_from_db(databasePath, existing_files)
     Nadded = added_files_in_db(databasePath, existing_files)
     Nunchanged = all_files_in_db(databasePath) - Nremoved
-    print(f"Track file changes : {Nadded} added | {Nremoved} removed | {Nunchanged} unchanged.")
+    print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + f" File changes    : {Nadded} added | {Nremoved} removed | {Nunchanged} unchanged.")
     add_log(f"Track file changes : {Nadded} added | {Nremoved} removed | {Nunchanged} unchanged.", level="info")
 
     # Liste pour stocker les futures
     futures = []
     
     if Nadded == 0:
-        print("No new file to add to database.")
-        add_log("No new file to add to database.", level="info")
+        print(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " No new file to add in database.")
+        add_log("No new file to add in database.", level="info")
     else:
         
         add_log(f"Processing {Nadded} new files to add to database...", level="info")
         data_chunk = []
-        for file_path in tqdm(existing_files, desc="Scanning dataset   "):
+        for file_path in tqdm(existing_files, desc=datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " Scan dataset    "):
             result = extract_file_properties(file_path)
             if result:
                 data_chunk.append(result)
