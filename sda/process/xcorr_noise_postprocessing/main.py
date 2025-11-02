@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys
 import os
-import glob
 import numpy as np
 from datetime import datetime, timedelta
-import pickle as pkl
-import shutil
 from tqdm import tqdm
 from scipy.io import loadmat
-from pathlib import Path
-from obspy import read_inventory
+import pandas as pd
 
 from multiprocessing import Pool
 from functools import partial
@@ -22,6 +17,7 @@ from sda.core.stations_define import MakeCouplesOfStation
 from sda.process.xcorr_noise_postprocessing.CorrelationsPostProcessing import CorrFilter
 from sda.process.xcorr_noise_postprocessing.Stack import Stack
 from sda.core.logs import add_log
+from sda.core.xcorr_noise import load_h5_corr
 import traceback
 
 
@@ -30,40 +26,22 @@ def PostProcessingPair(pairs, config):
     sta2 = pairs[1]
     
     dayStart = datetime.strptime(config["starttime"], "%Y-%m-%d")
-    dayEnd = datetime.strptime(config["endtime"], "%Y-%m-%d")
-    NofDays = (dayEnd - dayStart).days
-    day_str = [(dayStart + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(NofDays)]
+    dayEnd   = datetime.strptime(config["endtime"], "%Y-%m-%d")
+    full_times = pd.date_range(start=dayStart, end=dayEnd, freq="D")
 
-    # We get fs and max_lag from one of the files
-    for comp in ["ZZ", "ZN", "ZE", "NZ", "NN", "NE", "EZ", "EN", "EE"]:
-        folder = os.path.join(config["SaveDirectory"], comp, f"{sta1}-{sta2}")
-        if not os.path.isdir(folder): continue
-        for file in os.listdir(folder):
-            cur = loadmat(os.path.join(folder, file))
-            fs = cur['fs'][0][0]
-            max_lag = cur['max_lag'][0][0]
-            break
-    lagtime = np.arange(-max_lag, max_lag+1/fs, 1/fs)
-    
-    ### Loading Data and format with nan gaps
     data = {}
-    time = []
-    for i in range(len(day_str)):
-        time.append(datetime.strptime(day_str[i], "%Y-%m-%d"))       
-        corr_dict = {}        
-        
-        for comp in ["ZZ", "ZN", "ZE", "NZ", "NN", "NE", "EZ", "EN", "EE"]:
-            folder = os.path.join(config["SaveDirectory"], comp, f"{sta1}-{sta2}")
-            file = os.path.join(folder, f"{day_str[i]}.mat")
-            if not os.path.isfile(file): continue
-            cur = loadmat(file)
-            corr_dict[comp] = cur['corr'][0]
-            
-        for comp in corr_dict.keys():
-            if comp in data : data[comp][:,i] = corr_dict[comp]
-            else:             data[comp] = np.zeros( (len(lagtime), len(day_str)) ) * np.nan
-            
-    time = np.array(time)
+    for comp in ["ZZ"]:
+
+        file = os.path.join(config["SaveDirectory"], comp, f"{sta1}-{sta2}.h5")
+        if not os.path.isfile(file): continue
+        xcorr, lagtime, times, _ = load_h5_corr(file)
+
+        df = pd.DataFrame(xcorr, index=times, columns=lagtime)
+        df = df.reindex(index=full_times)
+        xcorr = df.values
+        data[comp] = xcorr.T
+
+    time = full_times.to_pydatetime()
         
     for comp in data.keys():
         data_comp = data[comp]
