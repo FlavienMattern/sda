@@ -79,8 +79,8 @@ nav:
     - Inverting dv/v: tutorials/invert_dvv.md
   - SDA API:
     - sda.core:
-        - sda.core.function1: core/function1.md
-        - sda.core.inversion: core/inversion.md
+        - function1: core/function1.md
+        - inversion: core/inversion.md
     - sda.process:
         - download_data: process/download_data.md
         - scan_data: process/scan_data.md
