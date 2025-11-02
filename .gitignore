@@ -38,9 +38,6 @@ Thumbs.db
 *.pkl
 
 # Other extensions
-*.jpg
-*.jpeg
-*.png
 *.pdf
 *.ods
 *.odt
