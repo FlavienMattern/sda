@@ -68,6 +68,7 @@ def makeCorrFromDirectoryTraces(config):
         date_str = os.path.basename(FileSave).split(".")[0]
         sta1, sta2 = DirSave_split[-1].split("-")
         comp = DirSave_split[-2]
+        save_directory = config['SaveDirectory']
         
         if config['maxInterDistance'] != None:
             lat1 = inventory.select(station=sta1)[0][0].latitude
@@ -79,15 +80,12 @@ def makeCorrFromDirectoryTraces(config):
             # Skip if distance inter station is too high
             if dist > config['maxInterDistance']:
                 continue
-        
-        saveCorr = os.path.join(config["SaveDirectory"][:-4], "Correlations", "Raw", comp)
-        filename = f"{sta1}-{sta2}.pkl"
 
         corr, perc = correlation.makeCorrelationSubLenStackWithNormalisationAndMaxlag(firstTrace, secondTrace, date_str, comp, sta1, sta2)
         
         # Keep Correlation if at least perc % of subcorr retained
         if perc >=config['minSubCorrKeep']:
-            writeCorr.save_xcorr(DirSave, FileSave, corr, max_lag, fs)
+            writeCorr.save_xcorr(save_directory, sta1, sta2, date_str, comp, corr, max_lag, fs)
         NumberOfCorrOneDate += 1
 
         if date is not None:

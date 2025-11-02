@@ -24,6 +24,7 @@ import os
 import scipy.io
 from sda.core.logs import add_log
 import traceback
+import h5py
 
 
 
@@ -63,16 +64,47 @@ class WriterCorrelation(object):
     
 class WriterOneCorrelation(WriterCorrelation):
 
-    def save_xcorr(self, DirSave, FileSave, corr, max_lag, fs):
+    # def save_xcorr(self, DirSave, FileSave, corr, max_lag, fs):
 
-        os.makedirs(DirSave, exist_ok=True)
+    #     os.makedirs(DirSave, exist_ok=True)
+
+    #     try:
+    #         scipy.io.savemat(os.path.join(DirSave, FileSave),
+    #                          {"corr":corr, "max_lag":max_lag,"fs": fs})
+
+    #     except:
+    #         msg = f"Cannot save correlation: {os.path.join(DirSave, FileSave)}\n"
+    #         msg += traceback.format_exc()
+    #         add_log(msg, level="error")
+
+    def save_xcorr(self, save_directory, sta1, sta2, day, comp, corr, max_lag, fs):
+
+        foldername = os.path.join(save_directory, f"{comp}")
+        filename = os.path.join(foldername, f"{sta1}-{sta2}.h5")
+        file_exists = os.path.exists(filename)
+        os.makedirs(foldername, exist_ok=True)
 
         try:
-            scipy.io.savemat(os.path.join(DirSave, FileSave),
-                             {"corr":corr, "max_lag":max_lag,"fs": fs})
+            with h5py.File(filename, 'a') as f:
 
+                if not file_exists:
+                    meta_grp = f.create_group("metadata")
+                    meta_grp.create_dataset('fs', data=fs)
+                    meta_grp.create_dataset('max_lag', data=max_lag)
+                    f.create_group("correlations")
+
+                if day in f["correlations"]:
+                    del f["correlations"][day]
+
+                corr_grp = f["correlations"]
+                corr_grp.create_dataset(
+                    day,
+                    data=corr,
+                    compression="gzip",
+                    dtype="float32"
+                )
         except:
-            msg = f"Cannot save correlation: {os.path.join(DirSave, FileSave)}\n"
+            msg = f"Cannot save correlation {sta1}-{sta2} ({comp}) for day {day}.\n"
             msg += traceback.format_exc()
             add_log(msg, level="error")
 
