@@ -14,16 +14,51 @@ from sda.core.stations_define import ReadListOfStation
 import sda.process.xcorr_noise.PreProcessingModules.tracesPreProcessing as PreProcessing
 from sda.core.logs import add_log
 import traceback
-
+import h5py
 import time
 import shutil
 from datetime import datetime, timedelta
-from multiprocessing import Pool
+from multiprocessing import Pool, Lock
 from functools import partial
 from tqdm import tqdm
 import numpy as np
 from obspy import read_inventory
 import geopy.distance
+
+
+
+def save_xcorr( save_directory, sta1, sta2, day, comp, corr, max_lag, fs):
+        
+        global lock
+        foldername = os.path.join(save_directory, f"{comp}")
+        filename = os.path.join(foldername, f"{sta1}-{sta2}.h5")
+        file_exists = os.path.exists(filename)
+        os.makedirs(foldername, exist_ok=True)
+
+        try:
+            with lock:  # To prevent simultaneous access to the file
+                with h5py.File(filename, 'a') as f:
+
+                    if not file_exists:
+                        meta_grp = f.create_group("metadata")
+                        meta_grp.create_dataset('fs', data=fs)
+                        meta_grp.create_dataset('max_lag', data=max_lag)
+                        f.create_group("correlations")
+
+                    if day in f["correlations"]:
+                        del f["correlations"][day]
+
+                    corr_grp = f["correlations"]
+                    corr_grp.create_dataset(
+                        day,
+                        data=corr,
+                        compression="gzip",
+                        dtype="float32"
+                    )
+        except:
+            msg = f"Cannot save correlation {sta1}-{sta2} ({comp}) for day {day}.\n"
+            msg += traceback.format_exc()
+            add_log(msg, level="error")
 
 
 def makeCorrFromDirectoryTraces(config):
@@ -85,7 +120,7 @@ def makeCorrFromDirectoryTraces(config):
         
         # Keep Correlation if at least perc % of subcorr retained
         if perc >=config['minSubCorrKeep']:
-            writeCorr.save_xcorr(save_directory, sta1, sta2, date_str, comp, corr, max_lag, fs)
+            save_xcorr(save_directory, sta1, sta2, date_str, comp, corr, max_lag, fs)
         NumberOfCorrOneDate += 1
 
         if date is not None:
@@ -152,15 +187,9 @@ def CorrelationParallel(day, config):
 
 
 
-def CorrelationPoolHandler(days, config):
-    # We set config dict as a non iterable argument for parallel processing
-    CorrelationParallelWithConfig = partial(CorrelationParallel, config=config)
-    # Create Pool with a progress bar
-    with Pool(processes=config["NumberOfProcesses"]) as p:
-        with tqdm(total=len(days), bar_format="{l_bar}{bar:30}{r_bar}") as pbar:
-            pbar.set_description(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " Correlations    ")
-            for _ in p.imap_unordered(CorrelationParallelWithConfig, days):
-                pbar.update()
+def init_worker(l):
+    global lock
+    lock = l
 
 
 
@@ -172,8 +201,14 @@ def Correlation(config):
     add_log(f"Starting correlation computation between {starttime} and {endtime}...", level="info")
     days = np.array([starttime + timedelta(days=i) for i in range( (endtime-starttime).days+1 )])
 
-    # Lancement du multiprocessing
-    CorrelationPoolHandler(days, config)
+    # Run in multiprocessing
+    lock = Lock() # to prevent simultaneous access to saved files
+    CorrelationParallelWithConfig = partial(CorrelationParallel, config=config)
+    with Pool(processes=config["NumberOfProcesses"], initializer=init_worker, initargs=(lock,)) as p:
+        with tqdm(total=len(days), bar_format="{l_bar}{bar:30}{r_bar}") as pbar:
+            pbar.set_description(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " Correlations    ")
+            for _ in p.imap_unordered(CorrelationParallelWithConfig, days):
+                pbar.update()
 
     # Removing folders
     if not config["savePreProcessing"]:

@@ -23,8 +23,6 @@ from datetime import datetime
 import os
 import scipy.io
 from sda.core.logs import add_log
-import traceback
-import h5py
 
 
 
@@ -78,31 +76,33 @@ class WriterOneCorrelation(WriterCorrelation):
     #         add_log(msg, level="error")
 
     def save_xcorr(self, save_directory, sta1, sta2, day, comp, corr, max_lag, fs):
-
+        
+        global lock
         foldername = os.path.join(save_directory, f"{comp}")
         filename = os.path.join(foldername, f"{sta1}-{sta2}.h5")
         file_exists = os.path.exists(filename)
         os.makedirs(foldername, exist_ok=True)
 
         try:
-            with h5py.File(filename, 'a') as f:
+            with lock:  # To prevent simultaneous access to the file
+                with h5py.File(filename, 'a') as f:
 
-                if not file_exists:
-                    meta_grp = f.create_group("metadata")
-                    meta_grp.create_dataset('fs', data=fs)
-                    meta_grp.create_dataset('max_lag', data=max_lag)
-                    f.create_group("correlations")
+                    if not file_exists:
+                        meta_grp = f.create_group("metadata")
+                        meta_grp.create_dataset('fs', data=fs)
+                        meta_grp.create_dataset('max_lag', data=max_lag)
+                        f.create_group("correlations")
 
-                if day in f["correlations"]:
-                    del f["correlations"][day]
+                    if day in f["correlations"]:
+                        del f["correlations"][day]
 
-                corr_grp = f["correlations"]
-                corr_grp.create_dataset(
-                    day,
-                    data=corr,
-                    compression="gzip",
-                    dtype="float32"
-                )
+                    corr_grp = f["correlations"]
+                    corr_grp.create_dataset(
+                        day,
+                        data=corr,
+                        compression="gzip",
+                        dtype="float32"
+                    )
         except:
             msg = f"Cannot save correlation {sta1}-{sta2} ({comp}) for day {day}.\n"
             msg += traceback.format_exc()
