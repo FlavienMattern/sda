@@ -29,7 +29,9 @@ dependencies = [
     "streamlit-elements==0.1.0",
     "plotly==6.2.0",
     "stqdm==0.0.5",
-    "h5py==3.14.0"
+    "h5py==3.14.0",
+    "torch==2.5.1",
+    "disba==0.6.1"
 ]
 
 [project.urls]
