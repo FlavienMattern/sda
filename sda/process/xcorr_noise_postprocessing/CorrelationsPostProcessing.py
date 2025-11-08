@@ -1,13 +1,5 @@
-import sys
-import os
 import numpy as np
-from datetime import datetime, timedelta
-import time
-import pickle as pkl
 import scipy.signal
-import matplotlib.pyplot as plt
-
-
 
 def CorrFilter(time, lagtime, data, config):
     
