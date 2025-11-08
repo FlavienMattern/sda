@@ -17,6 +17,7 @@ from sda.core.stations_define import MakeCouplesOfStation
 from sda.core.rotationRTZ import rotationRTZ
 import sda.core.config as conf
 from sda.core.logs import add_log
+from sda.core.xcorr_noise import load_h5_corr
 import traceback
 
 
@@ -126,18 +127,10 @@ def MonitoringParallel(pairs, config, inventory):
     ### Get xcorr results
     dataZNE = {}
     for comp in ["ZZ", "ZN", "ZE", "NZ", "NN", "NE", "EZ", "EN", "EE"]:
-        filename = os.path.join(CorrDirectory, f"{stack_day}days", comp, f"{sta1}-{sta2}.pkl")
-        
+        filename = os.path.join(CorrDirectory, f"{stack_day}days", comp, f"{sta1}-{sta2}.h5")
         if not os.path.exists(filename): continue
         
-        try:
-            with open(filename, 'rb') as f:
-                StackDict = pkl.load(f)
-        except:
-            continue
-        data = StackDict["array"]
-        lagtime = StackDict["lagtime"]
-        time = StackDict["timeCenter"]
+        data, lagtime, time, _ = load_h5_corr(filename)
         
         refstarttime = config["refstarttime"]
         refendtime = config["refendtime"]
@@ -183,13 +176,7 @@ def MonitoringParallel(pairs, config, inventory):
     
     if config["doStretching"]: stretchingDataFrame = {}
     if config["doDoublet"]:    doubletDataFrame = {}
-     
-    try:
-        time = StackDict["timeCenter"]
-    except:
-        return
     
-    # for idx, day in enumerate(timeStackBinCenter):
     for idx, day in enumerate(time):
         try:
             # Rotation
