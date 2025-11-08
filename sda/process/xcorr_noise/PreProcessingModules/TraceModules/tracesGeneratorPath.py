@@ -37,6 +37,7 @@ import scipy.fftpack
 import scipy.signal
 from datetime import datetime, timedelta
 from sda.process.xcorr_noise.PreProcessingModules.TraceModules import tracesExceptions, tracesUtil
+from sda.core.logs import add_log
 
 
 
@@ -112,7 +113,6 @@ class generatorDateDictOfTracesOneComponent(generatorDatePathFileDictOfTraces):
         genDatePathFileDictOfTraces = generatorDatePathFileDictOfTraces.__iter__(self)
         for date, FilePickle in genDatePathFileDictOfTraces:
             with open(FilePickle, 'rb') as fileDictTraces:
-                # print('Open the dict of traces: ' + FilePickle + ' for the date ' + date)
                 DictOfTracesOneDay = pickle.load(fileDictTraces)
                 DictOfTracesOneDayOneCompo = self.__fromDictTraceStationToDictTracesStationOneCompo(DictOfTracesOneDay, self.ComponentStation)
                 yield (date, DictOfTracesOneDayOneCompo)
@@ -124,7 +124,6 @@ class generatorDateDictOfTracesOneComponent(generatorDatePathFileDictOfTraces):
                 DictTracesOneCompo[station] = DictOfTraces[station][Component]
             except:
                 pass
-                #print 'There is no trace with component: ' + str(Component)
         return DictTracesOneCompo
 
 class generatorPathSaveStationListFilesStationOneDay(generatorDateDictOfTracesOneComponent):
@@ -252,24 +251,7 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
             self.TraceToTreated = numpy.zeros(self.DurationTraceSave, dtype='float')
             self.StationFullName = ""
             self.__StartDateTimeTrace = self.makeArrayToTreatAndGiveStartTime(date)
-            self.timeCorrectionTrace()
-
-            # ###
-            # import matplotlib.pyplot as plt
-            # import numpy as np
-            # print("self.station",self.station)
-            # print("self.ListFileStationCompoOneDayWithIndex",self.ListFileStationCompoOneDayWithIndex)
-            # print("self.Frequency",self.Frequency)
-            # print("IndexLongestTrace",IndexLongestTrace)
-            # print("self.DurationTraceSave",self.DurationTraceSave)
-            # print("self.TraceToTreated",self.TraceToTreated)
-            # print("self.StationFullName",self.StationFullName)
-            # print("self.__StartDateTimeTrace",self.__StartDateTimeTrace)
-            # plt.figure(figsize=(10,5))
-            # plt.title("date:{}\nFrequency:{}\nDirPathSave:{}\nFileSave:{}\nStationFullName:{}".format(date, self.Frequency, DirPathSave, FileSave, self.StationFullName))
-            # plt.plot(self.TraceToTreated)
-            # plt.tight_layout()
-            # plt.show()
+            self.timeCorrectionTrace(station, date)
 
             yield (date, self.TraceToTreated, self.Frequency, DirPathSave, FileSave, self.StationFullName)
 
@@ -388,12 +370,11 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
             return False
     
         if not FrequenceTrace == self.Frequency:
-            print('Frequency first trace of the list: ' + str(self.Frequency))
-            print(' is different than the Frequency of the current trace' +  str(FrequenceTrace) + ' in file:' + Infile + ' with index: ' + str(IndexTrace))
+            add_log(f"The Frequency of the first trace in stream ({self.Frequency} Hz) is different than the frequency in current trace ({FrequenceTrace} Hz) with index {IndexTrace} in file {Infile}", level="error")
             return False
     
         if numpy.max(numpy.isnan(Trace)):
-            print('bad trace, with nan values : ' + Infile)
+            add_log(f"The trace in stream (index: {IndexTrace}) contains only NaN values in file {Infile}", level="warning")
             return False
         
         return True
@@ -405,7 +386,7 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
             IndexBeginTrace += 1
         return  IndexBeginTrace
 
-    def timeCorrectionTrace(self, ErrorStartTime=5.e-6):
+    def timeCorrectionTrace(self, station, date, ErrorStartTime=5.e-6):
         #Trace is destroyed
         #__StartDateTimeTrace is a datetime object
         #ErrorStartTime is expressed in second
@@ -424,7 +405,7 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
             else:
                 return self.TraceToTreated
         except:
-            print("Error while correcting time errors on Trace, skipping correction...")
+            add_log(f"Time correction for station {station} and day {date} failed. Skipping correction.", level="warning")
             return self.TraceToTreated
         
 if __name__ == '__main__':
