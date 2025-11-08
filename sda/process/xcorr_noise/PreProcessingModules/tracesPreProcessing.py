@@ -175,9 +175,9 @@ def treatTracesFromDirectory(config):
             msg = f"An error occurred while preprocessing station {StationFullName} for day {date}. Skipping day.\n"
             msg += "Trace details:\n"
             msg += f"  - StationFullName : {StationFullName}\n"
-            msg += f"  - date : {date}"
-            msg += f"  - Frequence : {Frequence} Hz"
-            msg += f"  - DirPathSave : {DirPathSave}"
-            msg += f"  - FileSave : {FileSave}"
+            msg += f"  - date : {date}\n"
+            msg += f"  - Frequence : {Frequence} Hz\n"
+            msg += f"  - DirPathSave : {DirPathSave}\n"
+            msg += f"  - FileSave : {FileSave}\n"
             msg += traceback.format_exc()
             add_log(msg, level="error")
