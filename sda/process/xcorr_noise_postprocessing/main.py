@@ -14,8 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import sda.core.config as conf
 from sda.core.stations_define import MakeCouplesOfStation
-from sda.process.xcorr_noise_postprocessing.CorrelationsPostProcessing import CorrFilter
-from sda.process.xcorr_noise_postprocessing.Stack import Stack
+from sda.process.xcorr_noise_postprocessing.functions import Stack, CorrFilter
 from sda.core.logs import add_log
 from sda.core.xcorr_noise import load_h5_corr
 import traceback
@@ -34,7 +33,7 @@ def PostProcessingPair(pairs, config):
 
         file = os.path.join(config["SaveDirectory"], comp, f"{sta1}-{sta2}.h5")
         if not os.path.isfile(file): continue
-        xcorr, lagtime, times, _ = load_h5_corr(file)
+        xcorr, lagtime, times, fs = load_h5_corr(file)
 
         df = pd.DataFrame(xcorr, index=times, columns=lagtime)
         df = df.reindex(index=full_times)
@@ -57,7 +56,7 @@ def PostProcessingPair(pairs, config):
                     continue
             
             ### Stacking correlations
-            Stack(time, lagtime, data_comp, sta1, sta2, comp, config)
+            Stack(time, lagtime, data_comp, sta1, sta2, comp, config, fs)
 
 
 def xcorr_noise_postprocessing(

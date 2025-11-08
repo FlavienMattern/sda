@@ -5,10 +5,44 @@ from datetime import datetime, timedelta
 import time
 import pickle as pkl
 from sda.core.logs import add_log
+import h5py
+import scipy.signal
 
 
 
-def Stack(time, lagtime, data, sta1, sta2, comp, config):
+def CorrFilter(time, lagtime, data, config):
+    
+    threshold = config["SVDThreshold"]
+    K = config["WienerFiltTime"] # Wiener window in date dimension (smoothing of K days)
+    L = config["WienerFiltLagTime"] # Wiener window in lag time dimension (1/L * fs = lag time smoothing)
+    C = data
+    idxGood = ~np.all(np.isnan(C), axis=0)
+    C_nonan = C[:, idxGood]
+
+    # SVD
+    U, Sval, Vt = np.linalg.svd(C_nonan, full_matrices=False)
+    U = U[:, :threshold]
+    Sval = Sval[:threshold]
+    Vt = Vt[:threshold, :]
+
+    # Wiener filter
+    Cfull = np.zeros_like(C_nonan)
+    for i in range(threshold):
+        Ci = np.outer(U[:, i], Vt[i, :]) * Sval[i]
+        Ci = scipy.signal.wiener(Ci, (L, K))
+        Cfull += Ci
+
+    Cfull = scipy.signal.wiener(Cfull, (L, K))
+
+    # Reconstruct matrix
+    dataFilt = np.full((len(lagtime), len(time)), np.nan)
+    dataFilt[:, idxGood] = Cfull
+    
+    return dataFilt
+
+
+
+def Stack(time, lagtime, data, sta1, sta2, comp, config, fs):
     
     SaveDirectory = config["SaveDirectoryPostProcess"]
     
@@ -22,6 +56,7 @@ def Stack(time, lagtime, data, sta1, sta2, comp, config):
     if StackDay == 1:
         StackDict = {
             "array":stack_array[:,notNaN],
+            "fs":fs,
             "lagtime":stack_lagtime,
             "timeLeft":stack_time[notNaN],
             "timeRight":stack_time[notNaN],
@@ -66,6 +101,7 @@ def Stack(time, lagtime, data, sta1, sta2, comp, config):
             
         StackDict = {
             "array":arrayStack[:,notNaN],
+            "fs":fs,
             "lagtime":stack_lagtime,
             "timeLeft":timeStackBinLeft[notNaN],
             "timeRight":timeStackBinRight[notNaN],
@@ -74,9 +110,21 @@ def Stack(time, lagtime, data, sta1, sta2, comp, config):
         
     if np.count_nonzero(~np.isnan(StackDict["array"])) != 0:        
         savepath = os.path.join(SaveDirectory,"{:03d}days/{}".format(StackDay, comp))
-        filename = os.path.join(savepath,"{}-{}.pkl".format(sta1,sta2))
+        filename = os.path.join(savepath,"{}-{}.h5".format(sta1,sta2))
         os.makedirs(savepath, exist_ok=True)
-        with open(filename, 'wb') as f:
-            pkl.dump(StackDict, f)
+        save_file(filename, StackDict)
     else:
         add_log(f"Not enough data for {sta1}-{sta2} ({comp}). Results not saved.", level="warning")
+
+
+
+def save_file(filename, StackDict):
+
+    timeCenter = StackDict["timeCenter"]
+    timeCenter = np.array([str(v) for v in timeCenter.astype('datetime64[s]').astype(str)], dtype=h5py.string_dtype())
+
+    with h5py.File(filename, 'w') as f:
+        f.create_dataset("array", data=StackDict["array"], compression="gzip", dtype="float32")
+        f.create_dataset("fs", data=StackDict["fs"], dtype="float32")
+        f.create_dataset("lagtime", data=StackDict["lagtime"], compression="gzip", dtype="float32")
+        f.create_dataset("time", data=timeCenter)
