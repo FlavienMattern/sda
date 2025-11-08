@@ -30,7 +30,7 @@ def PostProcessingPair(pairs, config):
     full_times = pd.date_range(start=dayStart, end=dayEnd, freq="D")
 
     data = {}
-    for comp in ["ZZ"]:
+    for comp in ["ZZ", "ZN", "ZE", "NZ", "NN", "NE", "EZ", "EN", "EE"]:
 
         file = os.path.join(config["SaveDirectory"], comp, f"{sta1}-{sta2}.h5")
         if not os.path.isfile(file): continue
@@ -64,7 +64,7 @@ def PostProcessingPair(pairs, config):
 def PostProcessingPoolHandler(pairs, config):
     with ThreadPoolExecutor(max_workers=config["NumberOfProcesses"]) as executor:
         futures = [executor.submit(PostProcessingPair, pair, config) for pair in pairs]
-        for future in tqdm(as_completed(futures), total=len(futures), desc=datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " PostProcessing  "):
+        for future in tqdm(as_completed(futures), total=len(futures), desc=datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " PostProcessing  ", bar_format="{l_bar}{bar:30}{r_bar}"):
             future.result()
                 
 
