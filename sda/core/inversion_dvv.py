@@ -77,6 +77,8 @@ class Inversion:
             c = c[mask_nona]
             l = l[mask_nona]
             lagtime = lagtime[mask_nona,:]
+
+        if len(data) == 0: return
         
         t = np.array([(min(lag)+max(lag))/2 for lag in lagtime])
         tnorm = c*t/l * 1.3 # Position dans le temps normalisé tnorm=t/t* avec t*=l*/c    ==>     t = tnorm x t* = tnorm x l*/c
