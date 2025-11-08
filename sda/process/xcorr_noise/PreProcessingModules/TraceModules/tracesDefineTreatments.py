@@ -19,6 +19,7 @@ libraries as numpy, scipy, obspy, etc...
 
 from sda.process.xcorr_noise.PreProcessingModules.TraceModules import tracesFunctions
 import obspy
+from sda.core.logs import add_log
 
 
 
@@ -126,7 +127,10 @@ def makeTreatmentTraceAfterNewFrequence(Trace, Frequence, acorr, remove_response
         tr.stats.channel = response_dict["station_name"].split(".")[3]
         
         # Attach and Remove response
-        tr.attach_response(inventory)
+        try:
+            tr.attach_response(inventory)
+        except ValueError:
+            add_log(f"No matching instrumental response found for station {response_dict['station_name']} and day {config['FirstYear']}/{config['FirstDay']}. Skipping trace.", level="warning")
         tr.remove_response(water_level=response_dict["water_level"],
                            pre_filt=response_dict["pre_filt"],
                            hide_sensitivity_mismatch_warning=True)
