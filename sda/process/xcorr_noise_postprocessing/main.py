@@ -60,15 +60,6 @@ def PostProcessingPair(pairs, config):
             Stack(time, lagtime, data_comp, sta1, sta2, comp, config)
 
 
-
-def PostProcessingPoolHandler(pairs, config):
-    with ThreadPoolExecutor(max_workers=config["NumberOfProcesses"]) as executor:
-        futures = [executor.submit(PostProcessingPair, pair, config) for pair in pairs]
-        for future in tqdm(as_completed(futures), total=len(futures), desc=datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " PostProcessing  ", bar_format="{l_bar}{bar:30}{r_bar}"):
-            future.result()
-                
-
-
 def xcorr_noise_postprocessing(
     outputPath,
     starttime,
@@ -128,7 +119,14 @@ def xcorr_noise_postprocessing(
              
     pairs = MakeCouplesOfStation(config)
     add_log("Starting postprocessing of ambient noise correlations...", level="info")
-    PostProcessingPoolHandler(pairs, config)
+
+    # Run in multiprocessing
+    PostProcessingParallelWithConfig = partial(PostProcessingPair, config=config)
+    with Pool(processes=config["NumberOfProcesses"]) as p:
+        with tqdm(total=len(pairs), bar_format="{l_bar}{bar:30}{r_bar}") as pbar:
+            pbar.set_description(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " PostProcessing  ")
+            for _ in p.imap_unordered(PostProcessingParallelWithConfig, pairs):
+                pbar.update()
 
     add_log("End process: xcorr_noise_postprocessing", level="info")
     add_log("#"*50, level="info")
