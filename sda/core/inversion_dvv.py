@@ -272,7 +272,10 @@ class Inversion:
             
             # m = m0 + Cm @ G.T @ torch.inverse(G @ Cm @ G.T + Cd) @ (d - G @ m0)
             m = m0 + Cm @ G.T @ torch.linalg.solve(G @ Cm @ G.T + Cd, d - G @ m0)
+            rms = self._RMS(d, G, m, Cd)
+
             m = m.cpu().numpy()
+            rms = rms.cpu().numpy()
             d = d.cpu().numpy()
             Cm = Cm.cpu().numpy()
             Cd = Cd.cpu().numpy()
@@ -282,7 +285,7 @@ class Inversion:
             # Saving results
             self.model[name] = {
                     "model": m,
-                    "RMS": self._RMS(d, G, m, Cd)
+                    "RMS": rms
                 }
             
             # Saving Restitution Index
@@ -732,8 +735,10 @@ class Inversion:
         
 
     def _RMS(self, d, G, m, Cd):
-        N = len(d)
-        rms = np.sqrt(1/N * (d-G@m).T @ inv(Cd) @ (d-G@m))
+        N = d.numel()
+        residual = d - G@m
+        x = torch.linalg.solve(Cd, residual)
+        rms = torch.sqrt( (1/N) * (residual.T @ x) )
         return rms
 
 
