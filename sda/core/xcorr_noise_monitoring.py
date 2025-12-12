@@ -68,7 +68,7 @@ class dvv_object:
             stack = f"{stack:03d}days"
             
         if isinstance(lagtime, tuple) or isinstance(lagtime, list):
-            lagtime = "_".join([f"{l:.2f}s" for l in lagtime])
+            lagtime = "_".join([f"{l:.2f}" for l in lagtime]) + "s"
            
            
         # All lagtimes / All parameters
