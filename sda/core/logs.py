@@ -88,7 +88,10 @@ def start_logging(log_dir=None, log_name=None, level="INFO"):
         return
 
     if log_dir is None:
-        wdir = os.path.dirname(os.path.abspath(__main__.__file__))
+        try:
+            wdir = os.path.dirname(os.path.abspath(__main__.__file__))
+        except:
+            wdir = os.getcwd()
         log_dir = os.path.join(wdir, "logs")
         os.makedirs(log_dir, exist_ok=True)
 
@@ -135,8 +138,9 @@ def add_log(message, level="info"):
     level : str
         Log level ("debug", "info", "warning", "error", "critical")
     """
+
     if not _log_initialized:
-        start_logging()
+        return
 
     logger = logging.getLogger("sda")
 
