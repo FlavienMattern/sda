@@ -1,9 +1,39 @@
 import os
 import pandas as pd
 from tqdm import tqdm
+import h5py
+import numpy as np
 
 import warnings
 warnings.filterwarnings("ignore")
+
+
+
+def load_h5_dvv(filename):
+    
+    with h5py.File(filename, "r") as f:
+        results = h5_to_dict(f)
+
+    return results
+  
+
+ 
+def h5_to_dict(h5_group):
+    result = {}
+    for key, item in h5_group.items():
+        if isinstance(item, h5py.Group):
+            result[key] = h5_to_dict(item)
+        elif isinstance(item, h5py.Dataset):
+            data = item[()]
+            if isinstance(data, bytes):
+                data = data.decode()
+            elif isinstance(data, np.ndarray) and data.dtype.kind == 'S':
+                data = data.astype(str).tolist()
+            elif isinstance(data, np.ndarray):
+                data = data.tolist()
+            result[key] = data
+    return result
+
 
 
 def average_dvv(output_path, comps=["ZZ","RR","TT","RT","RZ","TR","TZ","ZT","ZR"], methods=None, frequencies=None, stacks=None):
