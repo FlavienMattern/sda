@@ -13,8 +13,10 @@ def load_h5_dvv(filename):
     
     with h5py.File(filename, "r") as f:
         results = h5_to_dict(f)
+        
+    obj = dvv_object(results, filename)
 
-    return results
+    return obj
   
 
  
@@ -33,6 +35,118 @@ def h5_to_dict(h5_group):
                 data = data.tolist()
             result[key] = data
     return result
+
+
+class dvv_object:
+    
+    def __init__(self, data, filename):
+        print
+        self.data = data
+        self.filename = filename
+        self.sta1 = data["metadata"]["sta1"]
+        self.sta2 = data["metadata"]["sta2"]
+        
+        
+        
+    def get_metadata(self):
+        return self.data["metadata"]
+    
+    
+    
+    def get_alldata(self):
+        return self.data["data"]
+    
+    
+    
+    def get_data(self, method, frequency, stack, comp, lagtime=None, param=None):
+        
+        # Formatting inputs
+        if isinstance(frequency, tuple) or isinstance(frequency, list):
+            frequency = f"{frequency[0]:.3f}-{frequency[1]:.3f}Hz"
+            
+        if isinstance(stack, int):
+            stack = f"{stack:03d}days"
+            
+        if isinstance(lagtime, tuple) or isinstance(lagtime, list):
+            lagtime = "_".join([f"{l:.2f}s" for l in lagtime])
+           
+           
+        # All lagtimes / All parameters
+        if lagtime is None and param is None:
+            data = self.data["data"][method][frequency][stack][comp]
+            
+            df = pd.concat([
+                pd.DataFrame({k: v for k, v in values.items() if k != 'time'}, 
+                            index=pd.to_datetime(values['time']))
+                .set_axis(pd.MultiIndex.from_product([[lag], ['dvv', 'coherence', 'error']]), axis=1)
+                for lag, values in data.items()
+            ], axis=1)
+                
+            return df
+        
+        
+        # All lagtimes / One parameter
+        if lagtime is None and param is not None:
+            data = self.data["data"][method][frequency][stack][comp]
+            df = pd.concat([
+                pd.DataFrame(values[param], index=pd.to_datetime(values['time']), columns=[lag]) for lag, values in data.items()
+            ], axis=1)
+            return df
+        
+        
+        # One lagtime / All parameters
+        if lagtime is not None and param is None:
+            data = self.data["data"][method][frequency][stack][comp][lagtime]
+            df = pd.DataFrame(data)
+            df.set_index("time", inplace=True)
+            df.set_index(pd.to_datetime(df.index), inplace=True)
+            return df
+        
+        
+        # One lagtime / One parameter
+        if lagtime is not None and param is not None:
+            data = self.data["data"][method][frequency][stack][comp][lagtime][param]
+            time = data = self.data["data"][method][frequency][stack][comp][lagtime]["time"]
+            df = pd.DataFrame(data, columns=[param], index=pd.to_datetime(time))
+            return df
+        
+        
+
+    def __repr__(self):
+        pair_str = f"{self.sta1} - {self.sta2}"
+        text =   "┏━━━   dv/v object   ━━━┓\n"
+        text += f"┃  {pair_str:^20} ┃ \n"
+        text += f"┣━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━  Possible actions  ━━━━━┓\n"
+        text += f"┃ <obj>.get_metadata() # Get metadata                                ┃\n"
+        text += f"┃ <obj>.get_alldata()  # Get all dataset (raw format)                ┃\n"
+        text += f"┃ <obj>.get_data()     # Formatted dataset for given parameters      ┃\n"
+        text += f"┃                        (see table below)                           ┃\n"
+        text += f"┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n"
+        text += f"                          DATASETS AVAILABLE\n\n"
+        text += f"┏━━━ method ━━━┳━━━ frequency ━━━┳━━ stack ━━┳━ comp ━┳━ lagtime ━━ •••\n"
+        text += f"┃              ┃                 ┃           ┃        ┃\n"
+        
+        for method, res_method in self.data["data"].items():
+            for freq, res_freq in res_method.items():
+                for stack, res_stack in res_freq.items():
+                    for comp, res_comp in res_stack.items():
+                        lags = ""
+                        for idx, lag in enumerate(res_comp.keys()):
+                            lags += f"{lag}"
+                            if idx < len(res_comp.keys()) - 1:
+                                lags += " • "
+                        
+                        text += f"┃ {method:^12} ┃ {freq:^15} ┃ {stack:^9} ┃ {comp:^6} ┃ {lags}\n"
+                            
+        text += f"┗━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━┻━━━━━━━━┻━━━━━━━━━━━━ •••\n"
+        
+        return text
+    
+    
+        
+    def __str__(self):
+        return self.__repr__()
+
 
 
 
