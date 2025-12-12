@@ -34,6 +34,7 @@ def PostProcessingPair(pairs, config):
         file = os.path.join(config["SaveDirectory"], comp, f"{sta1}-{sta2}.h5")
         if not os.path.isfile(file): continue
         xcorr, lagtime, times, fs = load_h5_corr(file)
+        xcorr = xcorr.T
 
         df = pd.DataFrame(xcorr, index=times, columns=lagtime)
         df = df.reindex(index=full_times)
