@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import time
 from multiprocessing import Pool
 from functools import partial
+import h5py
 
 # Local modules
 from sda.process.xcorr_noise_monitoring.MonitoringMethods import stretching, mwcs
@@ -35,6 +36,7 @@ def MonitoringParallel(pairs, config, inventory):
     dt = 1/config["NewFrequence"]
     SaveDirectory = os.path.join(config["outputPath"], "xcorr_noise_monitoring")
     CorrDirectory = os.path.join(config["outputPath"], "xcorr_noise_postprocessing")
+    freq_str = f"{freq[0]:.3f}-{freq[1]:.3f}Hz"
     
     dayStart = datetime.strptime(config["starttime"], "%Y-%m-%d")
     dayEnd = datetime.strptime(config["endtime"], "%Y-%m-%d")
@@ -45,6 +47,7 @@ def MonitoringParallel(pairs, config, inventory):
     sta1 = pairs[0]
     sta2 = pairs[1]
     stack_day = "{:03d}".format(config["StackDays"])
+    stack_str = f"{stack_day}days"
     
     if config['maxInterDistance'] != None:
         inv1 = inventory.select(station=sta1)[0][0]
@@ -163,21 +166,34 @@ def MonitoringParallel(pairs, config, inventory):
             ref = ref_fold
             
         dataZNE[comp] = {"data":data, "ref":ref, "time":time}
+        
+    if dataZNE == {}:
+        return
 
     # Parameters for functions
     lagtime = np.arange(-config["Maxlag"] / config["NewFrequence"],
                         config["Maxlag"] / config["NewFrequence"] + 1./config["NewFrequence"],
                         1./config["NewFrequence"])
-    para={
+    para = {
         "twin":lagtime,
         "freq":freq,
         "dt":dt
         }
     
-    if config["doStretching"]: stretchingDataFrame = {}
-    if config["doDoublet"]:    doubletDataFrame = {}
+    results = {"metadata":{"sta1":sta1,"sta2":sta2}, "data":{}}
+    if config["doStretching"]:
+        results["data"]["stretching"] = {}
+        stretchingDataFrame = {}
+    if config["doDoublet"]:
+        doubletDataFrame = {}
+        results["data"]["doublet"] = {}
+        
+    time = pd.date_range(start=dayStart, end=dayEnd, freq="D")
     
     for idx, day in enumerate(time):
+        
+        time_str = day.strftime("%Y-%m-%d")
+        
         try:
             # Rotation
             corr_dict = {}
@@ -190,66 +206,88 @@ def MonitoringParallel(pairs, config, inventory):
             if len(config["RotationComponents"]) != 0:
                 corr_dict = rotationRTZ(sta1, sta2, inventory, corr_dict, config["RotationComponents"])
                 ref_dict  = rotationRTZ(sta1, sta2, inventory, ref_dict, config["RotationComponents"])
-
-            # Monitoring for all cross-components
-            for comp in corr_dict.keys():
-                cur = corr_dict[comp]
-                ref = ref_dict[comp]
-
-                if config["doStretching"]:
-                    stretchingResults = stretching(ref, cur, dv_range, nbtrial, lagtime_range, para)
-                    HEADER_names = list(stretchingResults.keys())
-                    SUBHEADER_names = list(stretchingResults[list(stretchingResults.keys())[0]].keys())
-                    SUBHEADER = np.array(SUBHEADER_names*len(stretchingResults))
-                    HEADER = np.array([[HEADER_names[i]]*len(SUBHEADER_names) for i in range(len(HEADER_names))]).flatten()
-                    VALUES = np.array([[stretchingResults[l][m]] for l in stretchingResults.keys() for m in stretchingResults[l].keys()])
-                    stretchingResults = pd.DataFrame(data=VALUES.T, columns=pd.MultiIndex.from_tuples(zip(HEADER,SUBHEADER)))
-                    stretchingResults = stretchingResults.set_index(pd.to_datetime(np.array([time[idx]]), format="%Y-%m-%d"))
-                    if comp not in stretchingDataFrame: stretchingDataFrame[comp] = pd.DataFrame()
-                    stretchingDataFrame[comp] = pd.concat([stretchingDataFrame[comp], stretchingResults])
-
-                if config["doDoublet"]:
-                    doubletResults = mwcs(ref, cur, t_moving_window_length, t_slide_step, para, lagtime_range, smoothing_half_win=5)
-                    HEADER_names = list(doubletResults.keys())
-                    SUBHEADER_names = list(doubletResults[list(doubletResults.keys())[0]].keys())
-                    SUBHEADER = np.array(SUBHEADER_names*len(doubletResults))
-                    HEADER = np.array([[HEADER_names[i]]*len(SUBHEADER_names) for i in range(len(HEADER_names))]).flatten()
-                    VALUES = np.array([[doubletResults[l][m]] for l in doubletResults.keys() for m in doubletResults[l].keys()])
-                    doubletResults = pd.DataFrame(data=VALUES.T, columns=pd.MultiIndex.from_tuples(zip(HEADER,SUBHEADER)))
-                    doubletResults = doubletResults.set_index(pd.to_datetime(np.array([time[idx]]), format="%Y-%m-%d"))
-                    if comp not in doubletDataFrame: doubletDataFrame[comp] = pd.DataFrame()
-                    doubletDataFrame[comp] = pd.concat([doubletDataFrame[comp], doubletResults])
+                
         except Exception as e:
-            print(e)
+            add_log(f"Error while rotating pair {sta1}-{sta2} for day {day}: {e}", level="error")
             continue
-            
 
-        if config["doStretching"]:
-            for comp in stretchingDataFrame.keys():
-                SaveFolderStretching = os.path.join(SaveDirectory, "Stretching/{:.2f}-{:.2f}Hz/{:03d}days/{}".format(min(freq), max(freq), int(stack_day), comp))
-                SaveFilenameStretching = os.path.join(SaveFolderStretching, "{}-{}.csv".format(sta1,sta2))
+
+        # Monitoring for all cross-components
+        for comp in corr_dict.keys():
+            cur = corr_dict[comp]
+            ref = ref_dict[comp]
+            
+            if config["doStretching"]:
                 try:
-                    os.makedirs(SaveFolderStretching)
-                except:
-                    pass
-                stretchingDataFrame[comp].to_csv(SaveFilenameStretching)
+                    stretchingResults = stretching(ref, cur, dv_range, nbtrial, lagtime_range, para)
+                    for lag_str, value in stretchingResults.items():
+                        # Formatting dictionnary                        
+                        res = results["data"]["stretching"].setdefault(freq_str, {}).setdefault(stack_str, {}).setdefault(comp, {}).setdefault(lag_str, {"time":[], "dvv":[], "coherence":[], "error":[]})
+                        # Appeding data in dictionnary
+                        res["time"].append(time_str)
+                        res["dvv"].append(value["dv"])
+                        res["coherence"].append(value["cc"])
+                        res["error"].append(value["error"])
+                except Exception as e:
+                    add_log(f"Error while processing pair {sta1}-{sta2} ({comp}) for day {day} (stretching): {e}", level="error")
+                    continue
+                
+
+            if config["doDoublet"]:
+                try:
+                    doubletResults = mwcs(ref, cur, t_moving_window_length, t_slide_step, para, lagtime_range, smoothing_half_win=5)
+                    for lag_str, value in doubletResults.items():
+                        # Formatting dictionnary                        
+                        res = results["data"]["stretching"].setdefault(freq_str, {}).setdefault(stack_str, {}).setdefault(comp, {}).setdefault(lag_str, {"time":[], "dvv":[], "coherence":[], "error":[]})
+                        # Appeding data in dictionnary
+                        res["time"].append(time_str)
+                        res["dvv"].append(value["dv"])
+                        res["coherence"].append(value["cc"])
+                        res["error"].append(value["error"])
+                except Exception as e:
+                    add_log(f"Error while processing pair {sta1}-{sta2} ({comp}) for day {day} (mwcs): {e}", level="error")
+                    continue
+            
         
-        if config["doDoublet"]:
-            for comp in doubletDataFrame.keys():
-                SaveFolderDoublet = os.path.join(SaveDirectory, "Doublet/{:.2f}-{:.2f}Hz/{:03d}days/{}".format(min(freq), max(freq), int(stack_day), comp))
-                SaveFilenameDoublet = os.path.join(SaveFolderDoublet, "{}-{}.csv".format(sta1,sta2))
-                try:
-                    os.makedirs(SaveFolderDoublet)
-                except:
-                    pass
-                doubletDataFrame[comp].to_csv(SaveFilenameDoublet)
 
         # Note : to read the saved 3D DataFrame and use id
         # df = pd.read_csv(filename, index_col=[0], header=[0,1])
         # df.loc[Time Index, Lagtime Bands][Parameters]
         #  > example : df.loc[:, "-20.00_0.00s"]["dv"]
         #    read the [-20, 0]s lagtime band for all days and return dv only
+        
+        
+    SaveDirectory = os.path.join(config["outputPath"], "xcorr_noise_monitoring")
+    os.makedirs(SaveDirectory, exist_ok=True)
+    filename = os.path.join(SaveDirectory, f"{sta1}-{sta2}.h5")
+        
+    with h5py.File(filename, "a") as f:
+        merge_hdf5(f, results)
 
+
+
+def merge_hdf5(h5_group, data_dict):
+    for key, value in data_dict.items():
+        if isinstance(value, dict):
+            if key not in h5_group:
+                subgroup = h5_group.create_group(key)
+            else:
+                subgroup = h5_group[key]
+            merge_hdf5(subgroup, value)
+        else:
+            if key not in h5_group:
+                if isinstance(value, str):
+                    value = np.string_(value)
+                    h5_group.create_dataset(key, data=value)
+                elif isinstance(value, list):
+                    arr = np.array(value)
+                    if arr.dtype.kind in ['U', 'S', 'O']: # if list of strings
+                        arr = np.array(value, dtype='S')
+                        h5_group.create_dataset(key, data=arr, compression="gzip")
+                    else: # if an array of floats
+                        h5_group.create_dataset(key, data=arr, compression="gzip", dtype="float32")
+                else:
+                    h5_group.create_dataset(key, data=value)
 
 
 
