@@ -32,7 +32,6 @@ def save_xcorr( save_directory, sta1, sta2, day, comp, corr, max_lag, fs):
         global lock
         foldername = os.path.join(save_directory, f"{comp}")
         filename = os.path.join(foldername, f"{sta1}-{sta2}.h5")
-        file_exists = os.path.exists(filename)
         os.makedirs(foldername, exist_ok=True)
 
         try:
