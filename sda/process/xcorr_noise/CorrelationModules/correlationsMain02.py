@@ -39,14 +39,13 @@ def save_xcorr( save_directory, sta1, sta2, day, comp, corr, max_lag, fs):
             with lock:  # To prevent simultaneous access to the file
                 with h5py.File(filename, 'a') as f:
 
-                    if not file_exists:
-                        if "metadata" not in f:
-                            meta_grp = f.create_group("metadata")
-                            meta_grp.create_dataset('fs', data=fs)
-                            meta_grp.create_dataset('max_lag', data=max_lag)
+                    if "metadata" not in f:
+                        meta_grp = f.create_group("metadata")
+                        meta_grp.create_dataset('fs', data=fs)
+                        meta_grp.create_dataset('max_lag', data=max_lag)
 
-                        if "correlations" not in f:
-                            f.create_group("correlations")
+                    if "correlations" not in f:
+                        f.create_group("correlations")
 
                     if day in f["correlations"]:
                         del f["correlations"][day]
