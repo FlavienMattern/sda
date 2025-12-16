@@ -203,14 +203,14 @@ def MonitoringParallel(pairs, config, inventory):
                     corr_dict[comp] = dataZNE[comp]["data"][:, dataZNE[comp]["time"]==day].flatten()
                     ref_dict[comp]  = dataZNE[comp]["ref"]
             
-            if len(config["RotationComponents"]) != 0:
-                corr_dict = rotationRTZ(sta1, sta2, inventory, corr_dict, config["RotationComponents"])
-                ref_dict  = rotationRTZ(sta1, sta2, inventory, ref_dict, config["RotationComponents"])
+            if config["RotationComponents"] is not None:
+                if len(config["RotationComponents"]) != 0:
+                    corr_dict = rotationRTZ(sta1, sta2, inventory, corr_dict, config["RotationComponents"])
+                    ref_dict  = rotationRTZ(sta1, sta2, inventory, ref_dict, config["RotationComponents"])
                 
         except Exception as e:
             add_log(f"Error while rotating pair {sta1}-{sta2} for day {day}: {e}", level="error")
             continue
-
 
         # Monitoring for all cross-components
         for comp in corr_dict.keys():
