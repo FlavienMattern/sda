@@ -193,7 +193,7 @@ def scan_data(outputPath, dataPath=None, databasePath=None, overwrite=True, Numb
         
         add_log(f"Processing {Nadded} new files to add to database...", level="info")
         data_chunk = []
-        for file_path in tqdm(existing_files, desc=datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " Scan dataset    "):
+        for file_path in tqdm(existing_files, desc=datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " Scan dataset    ", bar_format="{l_bar}{bar:30}{r_bar}"):
             result = extract_file_properties(file_path)
             if result:
                 data_chunk.append(result)
