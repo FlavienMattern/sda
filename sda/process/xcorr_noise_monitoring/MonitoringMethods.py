@@ -15,53 +15,152 @@ from obspy.signal.filter import bandpass
 #                    FUNCTIONS                     #
 ####################################################
 
+# def stretching(ref, cur, dv_range, nbtrial, lagtime_range, para):
+#     """
+#     This function compares the Reference waveform to stretched/compressed current waveforms to get the
+#     relative seismic velocity variation (and associated error).
+#     It also computes the correlation coefficient between the Reference waveform and the current waveform.
+
+#     PARAMETERS:
+#     ----------------
+#     ref: Reference waveform (np.ndarray, size N)
+#     cur: Current waveform (np.ndarray, size N)
+#     dv_range: absolute bound for the velocity variation; example: dv=0.03 for [-3,3]%
+#     of relative velocity change ('float')
+#     nbtrial: number of stretching coefficient between dvmin and dvmax, no need to be higher than 100  ('float')
+#     para: vector of the indices of the cur and ref windows on wich you want to do the measurements
+#     (np.ndarray, size tmin*delta:tmax*delta)
+#     For error computation, we need parameters:
+#         fmin: minimum frequency of the data
+#         fmax: maximum frequency of the data
+#         tmin: minimum time window where the dv/v is computed
+#         tmax: maximum time window where the dv/v is computed
+#     RETURNS:
+#     ----------------
+#     dv: Relative velocity change dv/v (in %)
+#     cc: correlation coefficient between the reference waveform and the best stretched/compressed current waveform
+#     cdp: correlation coefficient between the reference waveform and the initial current waveform
+#     error: Errors in the dv/v measurements based on Weaver et al (2011),
+#     On the precision of noise-correlation interferometry, Geophys. J. Int., 185(3)
+
+#     Note: The code first finds the best correlation coefficient between the Reference waveform and
+#     the stretched/compressed current waveform among the "nbtrial" values.
+#     A refined analysis is then performed around this value to obtain a more precise dv/v measurement .
+
+#     Originally by L. Viens 04/26/2018 (Viens et al., 2018 JGR)
+#     modified by Chengxin Jiang
+#     """
+#     # load common variables from dictionary
+#     freq = para["freq"]
+#     dt = para["dt"]
+#     fmin = np.min(freq)
+#     fmax = np.max(freq)
+#     tvec = np.linspace(min(para["twin"]), max(para["twin"]), len(cur))
+#     lagtime = np.linspace(min(para["twin"]), max(para["twin"]), len(cur))
+    
+#     # Filter correlations
+#     ref = bandpass(ref, fmin, fmax, 1/dt, corners=4, zerophase=True)  # A DECOMMENTER SI BESOIN
+#     cur = bandpass(cur, fmin, fmax, 1/dt, corners=4, zerophase=True)  # A DECOMMENTER SI BESOIN
+    
+#     # Results dictionnary
+#     stretchingResults = {}
+
+#     # make useful one for measurements
+#     dvmin = -np.abs(dv_range)
+#     dvmax = np.abs(dv_range)
+#     Eps = np.linspace(dvmin, dvmax, nbtrial)
+        
+#     if len(np.shape(lagtime_range)) == 1:
+#         lagtime_range = [lagtime_range]
+        
+#     # Loop over all lagtime windows    
+#     for lag in lagtime_range:
+#         lagtimeMin = min(lag)
+#         lagtimeMax = max(lag)
+        
+#         tmin = min(lag)
+#         tmax = max(lag)
+        
+#         lagstr = "{:.2f}_{:.2f}s".format(lagtimeMin, lagtimeMax)
+#         cof = np.zeros(Eps.shape, dtype=np.float32)
+
+#         # Set of stretched/compressed current waveforms
+#         for ii in range(len(Eps)):
+#             nt = tvec * (1 - Eps[ii])
+#             s = np.interp(x=tvec, xp=nt, fp=cur)
+#             waveform_ref = ref
+#             waveform_cur = s
+#             ### Cutting for specific lagtime
+#             idx1 = np.where(lagtime >= lagtimeMin)
+#             idx2 = np.where(lagtime <= lagtimeMax)
+#             idx = np.intersect1d(idx1,idx2)
+#             waveform_ref = waveform_ref[idx]
+#             waveform_cur = waveform_cur[idx]
+#             ###
+#             cof[ii] = np.corrcoef(waveform_ref, waveform_cur)[0, 1]
+            
+#         cdp = np.corrcoef(cur, ref)[0, 1]  # correlation coefficient between the reference and initial current waveforms
+
+#         # find the maximum correlation coefficient
+#         imax = np.nanargmax(cof)
+#         if imax >= len(Eps) - 2:
+#             imax = imax - 2
+#         if imax <= 2:
+#             imax = imax + 2      
+            
+#         # Proceed to the second step to get a more precise dv/v measurement
+#         dtfiner = np.linspace(Eps[imax - 2], Eps[imax + 2], nbtrial)
+#         ncof = np.zeros(dtfiner.shape, dtype=np.float32)
+#         for ii in range(len(dtfiner)):
+#             nt = tvec * (1 - dtfiner[ii])
+#             s = np.interp(x=tvec, xp=nt, fp=cur)
+#             waveform_ref = ref
+#             waveform_cur = s
+#             ### Cutting for specific lagtime
+#             idx1 = np.where(lagtime >= lagtimeMin)
+#             idx2 = np.where(lagtime <= lagtimeMax)
+#             idx = np.intersect1d(idx1,idx2)
+#             waveform_ref = waveform_ref[idx]
+#             waveform_cur = waveform_cur[idx]
+#             ###
+#             ncof[ii] = np.corrcoef(waveform_ref, waveform_cur)[0, 1]
+
+#         cc = np.max(ncof)  # Find maximum correlation coefficient of the refined  analysis
+#         dv = 100.0 * dtfiner[np.argmax(ncof)]  # Multiply by 100 to convert to percentage (Epsilon = -dt/t = dv/v)
+
+#         # Error computation based on Weaver et al (2011), On the precision of noise-correlation
+#         # interferometry, Geophys. J. Int., 185(3)
+#         T = 1 / (fmax - fmin)
+#         X = cc
+#         wc = np.pi * (fmin + fmax)
+#         t1 = np.min([tmin, tmax])
+#         t2 = np.max([tmin, tmax])
+#         error = 100 * (
+#             np.sqrt(1 - X**2) / (2 * X) * np.sqrt((6 * np.sqrt(np.pi / 2) * T) / (wc**2 * (t2**3 - t1**3)))
+#         )
+        
+#         stretchingResults[lagstr] = {}
+#         stretchingResults[lagstr]["dv"] = -dv
+#         stretchingResults[lagstr]["error"] = error
+#         stretchingResults[lagstr]["cc"] = cc
+#         stretchingResults[lagstr]["cdp"] = cdp
+
+#     return stretchingResults
+
+
+
 def stretching(ref, cur, dv_range, nbtrial, lagtime_range, para):
-    """
-    This function compares the Reference waveform to stretched/compressed current waveforms to get the
-    relative seismic velocity variation (and associated error).
-    It also computes the correlation coefficient between the Reference waveform and the current waveform.
-
-    PARAMETERS:
-    ----------------
-    ref: Reference waveform (np.ndarray, size N)
-    cur: Current waveform (np.ndarray, size N)
-    dv_range: absolute bound for the velocity variation; example: dv=0.03 for [-3,3]%
-    of relative velocity change ('float')
-    nbtrial: number of stretching coefficient between dvmin and dvmax, no need to be higher than 100  ('float')
-    para: vector of the indices of the cur and ref windows on wich you want to do the measurements
-    (np.ndarray, size tmin*delta:tmax*delta)
-    For error computation, we need parameters:
-        fmin: minimum frequency of the data
-        fmax: maximum frequency of the data
-        tmin: minimum time window where the dv/v is computed
-        tmax: maximum time window where the dv/v is computed
-    RETURNS:
-    ----------------
-    dv: Relative velocity change dv/v (in %)
-    cc: correlation coefficient between the reference waveform and the best stretched/compressed current waveform
-    cdp: correlation coefficient between the reference waveform and the initial current waveform
-    error: Errors in the dv/v measurements based on Weaver et al (2011),
-    On the precision of noise-correlation interferometry, Geophys. J. Int., 185(3)
-
-    Note: The code first finds the best correlation coefficient between the Reference waveform and
-    the stretched/compressed current waveform among the "nbtrial" values.
-    A refined analysis is then performed around this value to obtain a more precise dv/v measurement .
-
-    Originally by L. Viens 04/26/2018 (Viens et al., 2018 JGR)
-    modified by Chengxin Jiang
-    """
-    # load common variables from dictionary
     freq = para["freq"]
     dt = para["dt"]
     fmin = np.min(freq)
     fmax = np.max(freq)
     tvec = np.linspace(min(para["twin"]), max(para["twin"]), len(cur))
     lagtime = np.linspace(min(para["twin"]), max(para["twin"]), len(cur))
-    
+
     # Filter correlations
-    ref = bandpass(ref, fmin, fmax, 1/dt, corners=4, zerophase=True)  # A DECOMMENTER SI BESOIN
-    cur = bandpass(cur, fmin, fmax, 1/dt, corners=4, zerophase=True)  # A DECOMMENTER SI BESOIN
-    
+    ref = bandpass(ref, fmin, fmax, 1/dt, corners=4, zerophase=True)
+    cur = bandpass(cur, fmin, fmax, 1/dt, corners=4, zerophase=True)
+
     # Results dictionnary
     stretchingResults = {}
 
@@ -77,6 +176,14 @@ def stretching(ref, cur, dv_range, nbtrial, lagtime_range, para):
     for lag in lagtime_range:
         lagtimeMin = min(lag)
         lagtimeMax = max(lag)
+
+        i1 = np.searchsorted(lagtime, lagtimeMin, side="left")
+        i2 = np.searchsorted(lagtime, lagtimeMax, side="right")
+        idx = slice(i1, i2)
+        tvec_win = tvec[idx]
+        waveform_ref = ref[idx]
+        ref_m = waveform_ref - np.mean(waveform_ref)
+        ref_norm = np.dot(ref_m, ref_m)
         
         tmin = min(lag)
         tmax = max(lag)
@@ -85,21 +192,24 @@ def stretching(ref, cur, dv_range, nbtrial, lagtime_range, para):
         cof = np.zeros(Eps.shape, dtype=np.float32)
 
         # Set of stretched/compressed current waveforms
-        for ii in range(len(Eps)):
-            nt = tvec * (1 - Eps[ii])
-            s = np.interp(x=tvec, xp=nt, fp=cur)
-            waveform_ref = ref
-            waveform_cur = s
-            ### Cutting for specific lagtime
-            idx1 = np.where(lagtime >= lagtimeMin)
-            idx2 = np.where(lagtime <= lagtimeMax)
-            idx = np.intersect1d(idx1,idx2)
-            waveform_ref = waveform_ref[idx]
-            waveform_cur = waveform_cur[idx]
-            ###
-            cof[ii] = np.corrcoef(waveform_ref, waveform_cur)[0, 1]
+        n = tvec_win.size
+        sE = 1.0 + Eps
+        for ii in range(nbtrial):
+            nt = tvec * sE[ii]
+            y = np.interp(tvec_win, nt, cur)
+            sy = y.sum()
+            sy2 = np.dot(y, y)
+            var_y = sy2 - (sy*sy)/n
+            if var_y <= 0:
+                cof[ii] = 0.0
+            else:
+                cof[ii] = np.dot(ref_m, y) / np.sqrt(ref_norm * var_y)
             
-        cdp = np.corrcoef(cur, ref)[0, 1]  # correlation coefficient between the reference and initial current waveforms
+        y0 = cur[idx]
+        sy = y0.sum()
+        sy2 = np.dot(y0, y0)
+        var_y0 = sy2 - (sy*sy)/n
+        cdp = np.dot(ref_m, y0) / np.sqrt(ref_norm * var_y0)
 
         # find the maximum correlation coefficient
         imax = np.nanargmax(cof)
@@ -111,19 +221,18 @@ def stretching(ref, cur, dv_range, nbtrial, lagtime_range, para):
         # Proceed to the second step to get a more precise dv/v measurement
         dtfiner = np.linspace(Eps[imax - 2], Eps[imax + 2], nbtrial)
         ncof = np.zeros(dtfiner.shape, dtype=np.float32)
-        for ii in range(len(dtfiner)):
-            nt = tvec * (1 - dtfiner[ii])
-            s = np.interp(x=tvec, xp=nt, fp=cur)
-            waveform_ref = ref
-            waveform_cur = s
-            ### Cutting for specific lagtime
-            idx1 = np.where(lagtime >= lagtimeMin)
-            idx2 = np.where(lagtime <= lagtimeMax)
-            idx = np.intersect1d(idx1,idx2)
-            waveform_ref = waveform_ref[idx]
-            waveform_cur = waveform_cur[idx]
-            ###
-            ncof[ii] = np.corrcoef(waveform_ref, waveform_cur)[0, 1]
+
+        sF = 1.0 + dtfiner
+        for ii in range(nbtrial):
+            nt = tvec * sF[ii]
+            y = np.interp(tvec_win, nt, cur)
+            sy = y.sum()
+            sy2 = np.dot(y, y)
+            var_y = sy2 - (sy*sy)/n
+            if var_y <= 0:
+                ncof[ii] = 0.0
+            else:
+                ncof[ii] = np.dot(ref_m, y) / np.sqrt(ref_norm * var_y)
 
         cc = np.max(ncof)  # Find maximum correlation coefficient of the refined  analysis
         dv = 100.0 * dtfiner[np.argmax(ncof)]  # Multiply by 100 to convert to percentage (Epsilon = -dt/t = dv/v)
@@ -131,16 +240,15 @@ def stretching(ref, cur, dv_range, nbtrial, lagtime_range, para):
         # Error computation based on Weaver et al (2011), On the precision of noise-correlation
         # interferometry, Geophys. J. Int., 185(3)
         T = 1 / (fmax - fmin)
-        X = cc
         wc = np.pi * (fmin + fmax)
         t1 = np.min([tmin, tmax])
         t2 = np.max([tmin, tmax])
         error = 100 * (
-            np.sqrt(1 - X**2) / (2 * X) * np.sqrt((6 * np.sqrt(np.pi / 2) * T) / (wc**2 * (t2**3 - t1**3)))
+            np.sqrt(1 - cc**2) / (2 * cc) * np.sqrt((6 * np.sqrt(np.pi / 2) * T) / (wc**2 * (t2**3 - t1**3)))
         )
         
         stretchingResults[lagstr] = {}
-        stretchingResults[lagstr]["dv"] = -dv
+        stretchingResults[lagstr]["dv"] = dv
         stretchingResults[lagstr]["error"] = error
         stretchingResults[lagstr]["cc"] = cc
         stretchingResults[lagstr]["cdp"] = cdp
