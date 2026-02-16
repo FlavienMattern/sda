@@ -229,7 +229,7 @@ def MonitoringParallel(pairs, config, inventory):
                         res["coherence"].append(value["cc"])
                         res["error"].append(value["error"])
                 except Exception as e:
-                    add_log(f"Error while processing pair {sta1}-{sta2} ({comp}) for day {day} (stretching): {e}", level="error")
+                    # add_log(f"Error while processing pair {sta1}-{sta2} ({comp}) for day {day} (stretching): {e}", level="error")
                     continue
                 
 
@@ -245,7 +245,7 @@ def MonitoringParallel(pairs, config, inventory):
                         res["coherence"].append(value["cc"])
                         res["error"].append(value["error"])
                 except Exception as e:
-                    add_log(f"Error while processing pair {sta1}-{sta2} ({comp}) for day {day} (mwcs): {e}", level="error")
+                    # add_log(f"Error while processing pair {sta1}-{sta2} ({comp}) for day {day} (mwcs): {e}", level="error")
                     continue
             
         
