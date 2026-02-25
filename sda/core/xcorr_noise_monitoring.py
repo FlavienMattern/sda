@@ -75,11 +75,13 @@ class dvv_object:
         # All lagtimes / All parameters
         if lagtime is None and param is None:
             data = self.data["data"][method][frequency][stack][comp]
+            cols = ['dvv', 'coherence', 'error']
             
             df = pd.concat([
                 pd.DataFrame({k: v for k, v in values.items() if k != 'time'}, 
                             index=pd.to_datetime(values['time']))
-                .set_axis(pd.MultiIndex.from_product([[lag], ['dvv', 'coherence', 'error']]), axis=1)
+                .reindex(columns=cols)
+                .set_axis(pd.MultiIndex.from_product([[lag], cols]), axis=1)
                 for lag, values in data.items()
             ], axis=1)
                 
@@ -107,7 +109,7 @@ class dvv_object:
         # One lagtime / One parameter
         if lagtime is not None and param is not None:
             data = self.data["data"][method][frequency][stack][comp][lagtime][param]
-            time = data = self.data["data"][method][frequency][stack][comp][lagtime]["time"]
+            time = self.data["data"][method][frequency][stack][comp][lagtime]["time"]
             df = pd.DataFrame(data, columns=[param], index=pd.to_datetime(time))
             return df
         
