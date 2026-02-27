@@ -156,41 +156,59 @@ class Inversion:
 
     def compute_kernels(self, show_progress=True):
 
-        elts = []
-        for key, value in tqdm(self.dataset.items(), total=len(self.dataset.items()), desc="Preparing Kernels"):
-            for idx, pair_name in enumerate(value["stations"]):
-                coord1, coord2 = value["coordinates"][idx]
+        # --- 1) Collecte des kernels déjà présents (pair_name, params)
+        existing = set()
+        for pair_name, sub in self._KERNELS.items():
+            # sub: dict[params_tuple] -> kernel
+            for params in sub:
+                existing.add((pair_name, params))
+
+        # --- 2) Préparation des kernels à calculer (dédup via set)
+        to_compute = set()
+
+        items = self.dataset.items()
+        it = tqdm(items, total=len(self.dataset), desc="Preparing Kernels") if show_progress else items
+
+        for _, value in it:
+            coords = value["coordinates"]
+            stations = value["stations"]
+            t_arr = value["t"]
+            c_arr = value["c"]
+            l_arr = value["l"]
+            a_arr = value["alpha"]
+            f_arr = value["freq"]
+
+            for idx, pair_name in enumerate(stations):
+                coord1, coord2 = coords[idx]
                 sta1x, sta1y = coord1[0]/1e3, coord1[1]/1e3
                 sta2x, sta2y = coord2[0]/1e3, coord2[1]/1e3
-                t = value["t"][idx]
-                c = value["c"][idx]
-                l = value["l"][idx]
-                alpha = value["alpha"][idx]
-                freq = value["freq"][idx]
 
-                key1 = pair_name
-                key2 = (sta1x, sta1y, sta2x, sta2y, t, c, l, alpha, freq)
-                elt = (pair_name, sta1x, sta1y, sta2x, sta2y, t, c, l, alpha, freq)
+                params = (sta1x, sta1y, sta2x, sta2y,
+                        t_arr[idx], c_arr[idx], l_arr[idx], a_arr[idx], f_arr[idx])
 
-                if elt not in elts:
-                    if key1 not in self._KERNELS.keys():
-                        elts.append((pair_name, sta1x, sta1y, sta2x, sta2y, t, c, l, alpha, freq))
-                    else:
-                        if key2 not in self._KERNELS[key1].keys():
-                            elts.append((pair_name, sta1x, sta1y, sta2x, sta2y, t, c, l, alpha, freq))
+                key = (pair_name, params)
 
-        if (len(elts) == 0) & (show_progress==True):
+                if key not in existing:
+                    to_compute.add(key)
+
+        if (len(to_compute) == 0) & (show_progress==True):
             print("Computing Kernels: All kernels have already been computed. Skipping...")
             return
         
-        if show_progress:
-            pbar = tqdm(elts, total=len(elts), desc="Computing Kernels")
-        else:
-            pbar = elts
+        seq = list(to_compute)
+        pbar = tqdm(seq, total=len(seq), desc="Computing Kernels") if show_progress else seq
         
-        for pair_name, sta1x, sta1y, sta2x, sta2y, t, c, l, alpha, freq in pbar:
-            if pair_name not in self._KERNELS.keys(): self._KERNELS[pair_name] = {}
-            self._KERNELS[pair_name][(sta1x, sta1y, sta2x, sta2y, t, c, l, alpha, freq)] = self._Kpair(sta1x, sta1y, sta2x, sta2y, t, c, l, alpha, freq)
+        for pair_name, params in pbar:
+
+            (sta1x, sta1y, sta2x, sta2y, t, c, l, alpha, freq) = params
+
+            if pair_name not in self._KERNELS.keys():
+                self._KERNELS[pair_name] = {}
+
+            if params in self._KERNELS[pair_name]:
+                continue
+
+            self._KERNELS[pair_name][params] = self._Kpair(sta1x, sta1y, sta2x, sta2y, t, c, l, alpha, freq)
 
 
 
@@ -255,23 +273,23 @@ class Inversion:
             N = len(d)
             if N == 0: continue
             m0 = np.zeros(self.M)
-            Cd = self.Cd[name]
+            Cd = self.get_Cd(name)
             Cm = self.Cm
             
             G = self.build_G(name)
 
             # Inversion
-            #################################################################################
-            # m = m0 + Cm.dot(G.T).dot(inv(G.dot(Cm).dot(G.T) + Cd)).dot(d - G.dot(m0))
-            #################################################################################
             G  = torch.tensor(G,  dtype=torch.float32, device=self.device)
             m0 = torch.tensor(m0, dtype=torch.float32, device=self.device)
             Cm = torch.tensor(Cm, dtype=torch.float32, device=self.device)
             Cd = torch.tensor(Cd, dtype=torch.float32, device=self.device)
             d  = torch.tensor(d,  dtype=torch.float32, device=self.device)
             
-            # m = m0 + Cm @ G.T @ torch.inverse(G @ Cm @ G.T + Cd) @ (d - G @ m0)
-            m = m0 + Cm @ G.T @ torch.linalg.solve(G @ Cm @ G.T + Cd, d - G @ m0)
+            A = G @ Cm @ G.T
+            A.diagonal().add_(Cd)
+            rhs = d - G @ m0
+            m = m0 + Cm @ G.T @ torch.linalg.solve(A, rhs)
+            # m = m0 + Cm @ G.T @ torch.linalg.solve(G @ Cm @ G.T + Cd, d - G @ m0)
             rms = self._RMS(d, G, m, Cd)
 
             m = m.cpu().numpy()
@@ -297,6 +315,12 @@ class Inversion:
     def get_model(self, name): 
         z = self.z if self.zmin != self.zmax else None
         return self.x*1e3, self.y*1e3, z, self.model[name]["model"].reshape(len(self.z), len(self.y), len(self.x)).squeeze(),
+
+
+
+    def get_Cd(self, name):
+        # return np.diag(self.Cd[name])
+        return self.Cd[name]
     
 
 
@@ -304,7 +328,7 @@ class Inversion:
         if "restitution_index" in self.model[name].keys():
             rest = self.model[name]["restitution_index"]
         else:
-            Cd = self.Cd[name]
+            Cd = self.get_Cd(name)
             Cm = self.Cm
             G = self.build_G(name)
             rest = self._Restitution(G, Cm, Cd)
@@ -313,7 +337,7 @@ class Inversion:
     
     
     def get_resolution(self, name):
-        Cd = self.Cd[name]
+        Cd = self.get_Cd(name)
         Cm = self.Cm
         G = self.build_G(name)
         R = self._Resolution(G, Cm, Cd)
@@ -433,7 +457,7 @@ class Inversion:
             elif data_type == "velocity":
                 std = np.sqrt(1-coh**2) / (2*coh) * np.sqrt( (6*np.sqrt(np.pi/2)*T) / (wc**2 * (tf**3 - ti**3)) )
             
-            self.Cd[name] = np.diag(std)
+            self.Cd[name] = std.astype(np.float32)
                     
 
 
@@ -716,11 +740,13 @@ class Inversion:
         Cm = torch.tensor(Cm, dtype=torch.float32, device=self.device)
         Cd = torch.tensor(Cd, dtype=torch.float32, device=self.device)
         
-        R = Cm @ G.T @ torch.inverse(G @ Cm @ G.T + Cd) @ G
-        R = R.cpu().numpy()
+        # R = Cm @ G.T @ torch.inverse(G @ Cm @ G.T + Cd) @ G
+        A = G @ Cm @ G.T
+        A.diagonal().add_(Cd)
+        X = torch.linalg.solve(A, G)
+        R = Cm @ G.T @ X
         
-        # return Cm.dot(G.T).dot(inv(G.dot(Cm).dot(G.T) + Cd)).dot(G)
-        return R
+        return R.cpu().numpy()
     
 
     def _Restitution(self, G, Cm, Cd):
@@ -737,7 +763,8 @@ class Inversion:
     def _RMS(self, d, G, m, Cd):
         N = d.numel()
         residual = d - G@m
-        x = torch.linalg.solve(Cd, residual)
+        # x = torch.linalg.solve(Cd, residual)
+        x = residual / Cd
         rms = torch.sqrt( (1/N) * (residual.T @ x) )
         return rms
 
