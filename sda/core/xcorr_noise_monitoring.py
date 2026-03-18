@@ -59,7 +59,7 @@ class dvv_object:
     
     
     
-    def get_data(self, method, frequency, stack, comp, lagtime=None, param=None):
+    def get_data(self, method, frequency, stack, comp, lagtime=None, param=None, avg_sides=True):
         
         # Formatting inputs
         if isinstance(frequency, tuple) or isinstance(frequency, list):
@@ -84,8 +84,50 @@ class dvv_object:
                 .set_axis(pd.MultiIndex.from_product([[lag], cols]), axis=1)
                 for lag, values in data.items()
             ], axis=1)
-                
-            return df
+
+            if avg_sides:
+
+                lags = [(float(elt.split("_")[0]), float(elt.split("_")[1][:-1])) for elt in list(set(df.columns.get_level_values(0))) if elt[0] != "-"]
+                lags.sort()
+                new_df = pd.DataFrame()
+
+                for lagmin, lagmax in lags:
+                                
+                    # Get dv/v data
+                    lag_causal = f"{lagmin:.2f}_{lagmax:.2f}s"
+                    lag_acausal = f"{-lagmax:.2f}_{-lagmin:.2f}s"
+
+                    coh_causal = df[(lag_causal, "coherence")]
+                    coh_acausal = df[(lag_acausal, "coherence")]
+                    coh_avg = (coh_causal + coh_acausal) / 2
+
+                    err_causal = df[(lag_causal, "error")]
+                    err_acausal = df[(lag_acausal, "error")]
+                    err_avg = (err_causal + err_acausal) / 2
+
+                    dvv_causal = df[(lag_causal, "dvv")]
+                    dvv_acausal = df[(lag_acausal, "dvv")]
+
+                    t_dvv = dvv_causal.index
+                    y_dvv = np.average(np.array([dvv_causal, dvv_acausal]),
+                                    weights=np.array([coh_causal, coh_acausal]),
+                                    axis=0) 
+                    
+                    sub_df = pd.DataFrame(
+                        {
+                            (lag_causal, "dvv"): y_dvv,
+                            (lag_causal, "coherence"): coh_avg,
+                            (lag_causal, "error"): err_avg,
+                        },
+                        index=t_dvv
+                    )
+
+                    new_df = pd.concat([new_df, sub_df], axis=1)
+
+                return new_df
+            
+            else:  
+                return df
         
         
         # All lagtimes / One parameter
