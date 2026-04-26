@@ -19,6 +19,7 @@ from sda.core.rotationRTZ import rotationRTZ
 import sda.core.config as conf
 from sda.core.logs import add_log
 from sda.core.xcorr_noise import load_h5_corr
+from sda.core.xcorr_noise_monitoring import save_dvv_results
 import traceback
 
 
@@ -238,7 +239,7 @@ def MonitoringParallel(pairs, config, inventory):
                     doubletResults = mwcs(ref, cur, t_moving_window_length, t_slide_step, para, lagtime_range, smoothing_half_win=5)
                     for lag_str, value in doubletResults.items():
                         # Formatting dictionnary                        
-                        res = results["data"]["stretching"].setdefault(freq_str, {}).setdefault(stack_str, {}).setdefault(comp, {}).setdefault(lag_str, {"time":[], "dvv":[], "coherence":[], "error":[]})
+                        res = results["data"]["doublet"].setdefault(freq_str, {}).setdefault(stack_str, {}).setdefault(comp, {}).setdefault(lag_str, {"time":[], "dvv":[], "coherence":[], "error":[]})
                         # Appeding data in dictionnary
                         res["time"].append(time_str)
                         res["dvv"].append(value["dv"])
@@ -262,32 +263,7 @@ def MonitoringParallel(pairs, config, inventory):
     filename = os.path.join(SaveDirectory, f"{sta1}-{sta2}.h5")
         
     with h5py.File(filename, "a") as f:
-        merge_hdf5(f, results)
-
-
-
-def merge_hdf5(h5_group, data_dict):
-    for key, value in data_dict.items():
-        if isinstance(value, dict):
-            if key not in h5_group:
-                subgroup = h5_group.create_group(key)
-            else:
-                subgroup = h5_group[key]
-            merge_hdf5(subgroup, value)
-        else:
-            if key not in h5_group:
-                if isinstance(value, str):
-                    value = np.string_(value)
-                    h5_group.create_dataset(key, data=value)
-                elif isinstance(value, list):
-                    arr = np.array(value)
-                    if arr.dtype.kind in ['U', 'S', 'O']: # if list of strings
-                        arr = np.array(value, dtype='S')
-                        h5_group.create_dataset(key, data=arr, compression="gzip")
-                    else: # if an array of floats
-                        h5_group.create_dataset(key, data=arr, compression="gzip", dtype="float32")
-                else:
-                    h5_group.create_dataset(key, data=value)
+        save_dvv_results(f, results)
 
 
 
