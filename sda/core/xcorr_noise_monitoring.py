@@ -391,7 +391,7 @@ def average_dvv(output_path, comps=["ZZ", "NN", "EE", "ZN", "ZE", "EZ", "NZ", "E
 
                     for comp in comps:
                         try:
-                            df = dvvobj.get_data(method, freq, stack, comp)
+                            df = dvvobj.get_data(method, freq, stack, comp, avg_sides=False)
                         except Exception:
                             continue
                         components.append(df)
