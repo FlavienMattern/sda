@@ -76,7 +76,7 @@ class Inversion:
             freq = freq[mask_nona]
             c = c[mask_nona]
             l = l[mask_nona]
-            lagtime = lagtime[mask_nona,:]
+            lagtime = lagtime[mask_nona]
 
         if len(data) == 0: return
         
@@ -156,16 +156,13 @@ class Inversion:
 
     def compute_kernels(self, show_progress=True):
 
-        # --- 1) Collecte des kernels déjà présents (pair_name, params)
         existing = set()
         for pair_name, sub in self._KERNELS.items():
             # sub: dict[params_tuple] -> kernel
             for params in sub:
                 existing.add((pair_name, params))
 
-        # --- 2) Préparation des kernels à calculer (dédup via set)
         to_compute = set()
-
         items = self.dataset.items()
         it = tqdm(items, total=len(self.dataset), desc="Preparing Kernels") if show_progress else items
 
@@ -629,7 +626,7 @@ class Inversion:
         except:
             pass
         
-        eps = dr/2
+        eps = 1e-6
         
         p = torch.where(
                 torch.abs(t-r/c) <= eps, # Dirac condition
@@ -650,7 +647,7 @@ class Inversion:
         except:
             pass
         
-        eps = dr/2
+        eps = 1e-6
         
         p = torch.where(
                 c*t-r > eps,  # Heaviside condition
@@ -678,7 +675,7 @@ class Inversion:
         except:
             pass
 
-        eps = dr/2
+        eps = 1e-6
 
         p = torch.where(
                 torch.abs(t-r/c) < eps, # Dirac condition
@@ -699,7 +696,7 @@ class Inversion:
         except:
             pass
 
-        eps = dr/2
+        eps = 1e-6
 
         p = torch.where(
                 c*t-r > eps, # Heaviside condition
