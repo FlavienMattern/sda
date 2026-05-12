@@ -294,18 +294,20 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
         BiggestLenTrace = 0.0
         IndexLongestTrace = 0
         LastFileOpened = ''
+        self.files_ignore = []
         for infile, indexTrace, channel in self.ListFileStationCompoOneDayWithIndex:
             if channel[:2] == self.BestCode:
                 if not LastFileOpened == infile:
-                    LastFileOpened = infile
                     try:
-                        Stream = obspy.core.read(infile, headonly=True)
+                        Stream = obspy.core.read(infile, headonly=True)      
                     except Exception as err:
-                        msg = f"An error occurred while read header file '{infile}'. Skipping file.\n"
+                        msg = f"An error occurred while read file '{infile}'. Skipping file.\n"
                         msg += "Error details:\n"
                         msg += traceback.format_exc()
                         add_log(msg, level="error")
+                        self.files_ignore.append(infile)
                         continue
+                    LastFileOpened = infile
                 
                 
                 subStream = Stream[indexTrace]
@@ -317,11 +319,9 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
                     BiggestLenTrace = LenTrace
                     FrequenceLongestTrace = FrequenceTrace
                     IndexLongestTrace = indexTrace
+
         return FrequenceLongestTrace, IndexLongestTrace
 
-    def __makeTreatmentPieceOfTrace(self, Trace):
-        Trace -= numpy.mean(Trace)
-        return scipy.signal.detrend(Trace)
         
 
     def makeArrayToTreatAndGiveStartTime(self, date):
@@ -329,9 +329,11 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
         starttime = datetime.strptime(date, "%Y/%j")
         endtime = starttime + timedelta(seconds=int(self.LenTrace/self.NewFrequence))
         for infile, indexTrace, channel in self.ListFileStationCompoOneDayWithIndex:
+
+            if infile in self.files_ignore: continue
+
             if channel[:2] == self.BestCode:
                 if not LastFileOpened == infile:
-                    LastFileOpened = infile
                     try:
                         Stream = obspy.core.read(infile)
                     except Exception as err:
@@ -339,7 +341,9 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
                         msg += "Error details:\n"
                         msg += traceback.format_exc()
                         add_log(msg, level="error")
+                        self.files_ignore.append(infile)
                         continue
+                    LastFileOpened = infile
                 
                 
                 subStream = Stream[indexTrace]
@@ -355,7 +359,7 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
                                                             subStream.stats.station,
                                                             subStream.stats.location,
                                                             subStream.stats.channel)
-                #Trace = self.__makeTreatmentPieceOfTrace(Trace)
+
                 #If trace have problem (check with the function checkTraceInfo), we put it aside
                 if self.__checkTraceInfo(infile, Trace, indexTrace, StationTrace, ComponentTrace, FrequenceTrace):
                     IndexBeginTrace = self.__giveIndexBeginTrace(PeriodTrace, StartDateTimeTrace)
