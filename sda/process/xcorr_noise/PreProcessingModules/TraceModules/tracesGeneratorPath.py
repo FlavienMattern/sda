@@ -38,6 +38,7 @@ import scipy.signal
 from datetime import datetime, timedelta
 from sda.process.xcorr_noise.PreProcessingModules.TraceModules import tracesExceptions, tracesUtil
 from sda.core.logs import add_log
+import traceback
 
 
 
@@ -246,7 +247,13 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
             self.station = station
             self.ListFileStationCompoOneDayWithIndex = ListFileStationCompoOneDayWithIndex
             self.BestCode = self.selectBestChannelCode()
+
+            ###################################################################################################
+            # DEBUG THIS PART
+
             self.Frequency, IndexLongestTrace = self.giveFrequenceAndIndexFromTheLongestTrace(date)
+
+            ###################################################################################################
             self.DurationTraceSave = int(float(self.Frequency)*86400)
             self.TraceToTreated = numpy.zeros(self.DurationTraceSave, dtype='float')
             self.StationFullName = ""
@@ -291,17 +298,20 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
             if channel[:2] == self.BestCode:
                 if not LastFileOpened == infile:
                     try:
-                        Stream = obspy.core.read(infile)
-                    except:
-                        # print('Can\'t open the file :' + infile)
+                        Stream = obspy.core.read(infile, headonly=True)
+                    except Exception as err:
+                        msg = f"An error occurred while read file '{infile}'.\n"
+                        msg += "Error details:\n"
+                        msg += traceback.format_exc()
+                        add_log(msg, level="error")
                         sys.exit()
                 LastFileOpened = infile
                 
                 subStream = Stream[indexTrace]
                 subStream.trim(obspy.core.UTCDateTime(starttime), obspy.core.UTCDateTime(endtime))
-                
                 FrequenceTrace = float(numpy.round(float(subStream.stats['sampling_rate'])*1000)/1000)
-                LenTrace = len(subStream.__dict__['data'])
+                LenTrace = subStream.stats.npts
+                
                 if LenTrace>BiggestLenTrace:
                     BiggestLenTrace = LenTrace
                     FrequenceLongestTrace = FrequenceTrace
