@@ -248,16 +248,15 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
             self.ListFileStationCompoOneDayWithIndex = ListFileStationCompoOneDayWithIndex
             self.BestCode = self.selectBestChannelCode()
 
-            ###################################################################################################
-            # DEBUG THIS PART
-
             self.Frequency, IndexLongestTrace = self.giveFrequenceAndIndexFromTheLongestTrace(date)
-
-            ###################################################################################################
+            if self.Frequency == 0: continue
             self.DurationTraceSave = int(float(self.Frequency)*86400)
             self.TraceToTreated = numpy.zeros(self.DurationTraceSave, dtype='float')
             self.StationFullName = ""
-            self.__StartDateTimeTrace = self.makeArrayToTreatAndGiveStartTime(date)
+            try:
+                self.__StartDateTimeTrace = self.makeArrayToTreatAndGiveStartTime(date)
+            except Exception:
+                continue
             self.timeCorrectionTrace(station, date)
 
             yield (date, self.TraceToTreated, self.Frequency, DirPathSave, FileSave, self.StationFullName)
@@ -296,10 +295,11 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
         LastFileOpened = ''
         self.files_ignore = []
         for infile, indexTrace, channel in self.ListFileStationCompoOneDayWithIndex:
+
             if channel[:2] == self.BestCode:
                 if not LastFileOpened == infile:
                     try:
-                        Stream = obspy.core.read(infile, headonly=True)      
+                        Stream = obspy.core.read(infile)      
                     except Exception as err:
                         msg = f"An error occurred while read file '{infile}'. Skipping file.\n"
                         msg += "Error details:\n"
@@ -308,7 +308,6 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
                         self.files_ignore.append(infile)
                         continue
                     LastFileOpened = infile
-                
                 
                 subStream = Stream[indexTrace]
                 subStream.trim(obspy.core.UTCDateTime(starttime), obspy.core.UTCDateTime(endtime))
