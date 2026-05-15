@@ -283,6 +283,21 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
                     BestCode = code
         
         return BestCode
+
+
+    def npts_in_window(self, tr, starttime, endtime):
+        fs = float(tr.stats.sampling_rate)
+        trace_start = tr.stats.starttime
+        trace_end = tr.stats.endtime
+
+        overlap_start = max(trace_start, starttime)
+        overlap_end = min(trace_end, endtime)
+
+        if overlap_end < overlap_start:
+            return 0
+
+        return int(round((overlap_end - overlap_start) * fs)) + 1
+
         
     def giveFrequenceAndIndexFromTheLongestTrace(self, date):
         
@@ -299,9 +314,9 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
             if channel[:2] == self.BestCode:
                 if not LastFileOpened == infile:
                     try:
-                        Stream = obspy.core.read(infile)      
+                        Stream = obspy.core.read(infile, headonly=True)      
                     except Exception as err:
-                        msg = f"An error occurred while read file '{infile}'. Skipping file.\n"
+                        msg = f"An error occurred while read header file '{infile}'. Skipping file.\n"
                         msg += "Error details:\n"
                         msg += traceback.format_exc()
                         add_log(msg, level="error")
@@ -310,9 +325,11 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
                     LastFileOpened = infile
                 
                 subStream = Stream[indexTrace]
-                subStream.trim(obspy.core.UTCDateTime(starttime), obspy.core.UTCDateTime(endtime))
-                FrequenceTrace = float(numpy.round(float(subStream.stats['sampling_rate'])*1000)/1000)
-                LenTrace = subStream.stats.npts
+                # subStream.trim(obspy.core.UTCDateTime(starttime), obspy.core.UTCDateTime(endtime))
+                # FrequenceTrace = float(numpy.round(float(subStream.stats['sampling_rate'])*1000)/1000)
+                # LenTrace = subStream.stats.npts
+                FrequenceTrace = float(numpy.round(float(subStream.stats.sampling_rate) * 1000) / 1000)
+                LenTrace = self.npts_in_window(subStream, obspy.core.UTCDateTime(starttime), obspy.core.UTCDateTime(endtime)               )
 
                 if LenTrace>BiggestLenTrace:
                     BiggestLenTrace = LenTrace
@@ -366,6 +383,9 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
                         self.TraceToTreated[IndexBeginTrace:] = Trace[:self.DurationTraceSave-IndexBeginTrace]
                     else:
                         self.TraceToTreated[IndexBeginTrace: IndexBeginTrace + len(Trace)] = Trace
+
+        sys.stdout.flush()
+        sys.stderr.flush()
 
         return StartDateTimeTrace
     
