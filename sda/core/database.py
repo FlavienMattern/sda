@@ -1,7 +1,6 @@
-import os
-import math
-import sqlite3
+import os, re, math, sqlite3
 import pandas as pd
+from datetime import datetime, timedelta
 
 
 
@@ -13,6 +12,13 @@ def convert_size(size_bytes):
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
     return f"{s} {size_name[i]}"
+
+
+
+
+def functionRegex(value, pattern):
+        c_pattern = re.compile(r"\b" + pattern.lower() + r"\b")
+        return c_pattern.search(value) is not None
 
 
 
@@ -70,3 +76,69 @@ class Database:
 
         print("Filepath has been changed in the database !")
         print(f"{source} -> {destination}")
+
+
+
+    def filter(self, file_type=".*",
+                network=".*", station=".*", location=".*", channel=".*",
+                start="1970-01-01", end="2100-01-01"):
+        
+        """
+        data = database_filter(db_file = "database.db",
+                            file_type = "STREAM",
+                            network = "FR",
+                            station = "ILLK",
+                            location = "00",
+                            channel = "HHZ",
+                            start = "2019-11-01",
+                            end = "2019-11-10")
+        """
+        
+        ### Connexion à la base de données
+        db = sqlite3.connect(self.database_full_filename, isolation_level=None)
+        
+        db.create_function('REGEXP', 2, lambda x, y: 1 if re.search(x,y) else 0)
+        
+        ### Récupérer les portions mseed dans le range (start, end)
+        # (ENDTIME >= start) & (STARTTIME <= end)
+        # (   f    >= start) & (    i     <= end)
+        #
+        #           start                          end
+        #             ├─────────────────────────────┤                   input range
+        # 
+        #  i       fi             fi           fi            fi     f
+        #  ├───────┤├─────────────┤├───────────┤├────────────┤├─────┤    all traces
+        #
+        #      x    ├─────────────┤├───────────┤├────────────┤├─────┤ [1] (f >= start)
+        # 
+        #  ├───────┤├─────────────┤├───────────┤├────────────┤   x    [2] (i <= end)
+        # 
+        #      x    ├───── v ─────┤├──── v ────┤├──── v ─────┤   x       [1] & [2]
+        #
+        # On ajoute un jour artificiellement à end pour prendre en compte la journée entière
+        end = (datetime.strptime(end, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+
+        query = """
+                SELECT * FROM DATASET
+                WHERE
+                TYPE REGEXP '{}'
+                AND
+                NETWORK REGEXP '{}'
+                AND
+                STATION REGEXP '{}'
+                AND
+                LOCATION REGEXP '{}'
+                AND
+                CHANNEL REGEXP '{}'
+                AND
+                ENDTIME >= DATE('{}')
+                AND
+                STARTTIME <= DATE('{}')
+                ;
+                """.format(file_type, network, station, location, channel, start, end)
+
+        result = pd.read_sql_query(query, db)
+        
+        db.close()
+        
+        return result
