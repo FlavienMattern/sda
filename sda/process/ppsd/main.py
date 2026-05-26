@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 
 # Local modules
 import sda.core.database as database
-import sda.core.jobs as jb
+from sda.core.logs import add_log
 
 
 
@@ -23,8 +23,9 @@ def save_ppsd(ppsd, folder, station):
         end = max(ppsd.current_times_used).datetime.strftime("%Y-%m-%d")
         filename = os.path.join(folder, f"{station}_{start}_{end}.npz")
         ppsd.save_npz(filename)
+        add_log(f"PPSD saved for station {station} at {filename}.", level="INFO")
     except Exception as e:
-        print(f"Error saving PPSD for {station}:\n{e}")
+        add_log(f"Error saving PPSD for {station}:\n{e}", level="ERROR")
 
     
    
@@ -40,18 +41,17 @@ def init_ppsd(stream, inventory, parameters):
     
     
 
-def process_ppsd_station(station, parameters, queue):
-    NET, STA, LOC, CHA = station.split(".")
+def process_ppsd_station(station, parameters):
     inventory = parameters["inventory"]
     components = parameters["components"]
-    database_path = parameters["database_path"]
     starttime = parameters["starttime"]
     endtime = parameters["endtime"]
+    db_obj = parameters["db_obj"]
     
     if starttime is None or endtime is None:
-        db = database.filter(db_file=database_path, file_type="STREAM", station=f"^{STA}$")
+        db = db_obj.filter(file_type="STREAM", station=f"^{station}$")
     else:
-        db = database.filter(db_file=database_path, file_type="STREAM", station=f"^{STA}$", start=starttime, end=endtime)
+        db = db_obj.filter(file_type="STREAM", station=f"^{station}$", start=starttime, end=endtime)
     
     db["STATION_FULLNAME"] = db["NETWORK"]+"."+db["STATION"]+"."+db["LOCATION"]+"."+db["CHANNEL"]
     db["COMPONENT"] = db["CHANNEL"].str[-1]
@@ -60,6 +60,8 @@ def process_ppsd_station(station, parameters, queue):
 
     # Extract all files for the station
     for st in stations:
+        NET, STA, LOC, CHA = st.split(".")
+        add_log(f"Start processing PPSD for station {st}.", level="INFO")
         df = db[db["STATION_FULLNAME"] == st]
         df = df.sort_values(by='STARTTIME', ascending=True)
         
@@ -95,37 +97,36 @@ def process_ppsd_station(station, parameters, queue):
                     ### Also : this message appears : IOStream.flush timed out
                     ### --> Understand and correct the associated issue
                 except UserWarning as warn:
-                    warn_msg = f"Warning : {warn}"
+                    warn_msg = f"Error while adding ppsd for {station}. Creating new PPSD.\n{warn}"
+                    add_log(warn_msg, level="WARNING")
+
                     # Save current ppsd and create a new one
                     save_ppsd(ppsd, folder, st)
                     ppsd = init_ppsd(stream, inventorySub, parameters)
                     ppsd.add(stream)
-                    # queue.put({"JOBID":jobid, "STATUS":"DONE"})
-       
+                    
+        add_log(f"End processing PPSD for station {st}.", level="INFO")
+    
         if ppsd is not None:
             save_ppsd(ppsd, folder, st)
 
+        
+
 
 def PPSDPoolHandler(stations, parameters):
-    # Define queue to update database in parallel
-    manager = multiprocessing.Manager()
-    queue = manager.Queue()
-    writer_process = multiprocessing.Process(target=jb.insert_job_queue, args=(queue,parameters))
-    writer_process.start()
-     
     # We set config dict as a non iterable argument for parallel processing
-    PPSDParallelWithConfig = partial(process_ppsd_station, parameters=parameters, queue=queue)
+    PPSDParallelWithConfig = partial(process_ppsd_station, parameters=parameters)
     # Create Pool with a progress bar
-    with multiprocessing.Pool(processes=parameters["n_cores"]) as p:
-        with tqdm(total=len(stations), bar_format="{l_bar}{bar:30}{r_bar}") as pbar:
-            pbar.set_description("Computing PPSDs")
-            for _ in p.imap_unordered(PPSDParallelWithConfig, stations):
-                pbar.update()
-                
-    # End writting process to database
-    queue.put('STOP')
-    writer_process.join()
-    manager.shutdown()
+    p = multiprocessing.Pool(processes=parameters["n_cores"])
+    with tqdm(total=len(stations), bar_format="{l_bar}{bar:30}{r_bar}") as pbar:
+        pbar.set_description("Computing PPSDs")
+        for _ in p.imap_unordered(PPSDParallelWithConfig, stations):
+            pbar.update()
+    p.close()
+    p.join()
+
+
+    
 
 
 
@@ -179,40 +180,15 @@ def ppsd(
     if inventory_path == None:
         inventory_path = os.path.join(output_path, "data", "inventory")
 
-    print(f"[ppsd] Preparing jobs to compute ...")
-    ### Initialize Job Table and fill it
-    tableName = "JOBS_ppsd"
-    columns   = ["JOBID", "FILE", "STATION", "STATUS"]
-    jb.create_job_table(database_path, tableName, columns)
-
-    dbFilter = database.filter(db_file=database_path, file_type="STREAM")
+    db_obj = database.Database(database_path)
+    dbFilter = db_obj.filter(file_type="STREAM", start=starttime, end=endtime)
     files = dbFilter["FILE"]
-    job_ids = dbFilter[["NETWORK", "STATION", "LOCATION", "CHANNEL", "STARTTIME", "ENDTIME"]].apply("_".join, axis=1)
-    st_list = dbFilter[["NETWORK", "STATION", "LOCATION", "CHANNEL"]].apply(".".join, axis=1)
-    
-    
-    jobs_list = []
-    for idx, jobid in enumerate(job_ids):
-        jobs_list.append((jobid, files[idx], st_list[idx], "TODO"))
-
-    with sqlite3.connect(database_path) as conn:
-            
-        cursor = conn.cursor()
-        cursor.executemany(
-            """
-            INSERT OR IGNORE INTO JOBS_ppsd (JOBID, FILE, STATION, STATUS)
-            VALUES (?,?,?,?);
-            """, jobs_list
-        )
-        conn.commit()
-        jobs = jb.get_jobs(conn, tableName, status="TODO") # Get all jobs in 'TODO' status
         
     # Filter jobs and stations to process
     if stations is not None:
-        jobs = jobs[jobs["STATION"].apply(lambda x: x.split(".")[1]).isin(stations)]
+        dbFilter = dbFilter[dbFilter["STATION"].isin(stations)]
     
-    jobs = jobs[jobs["STATION"].apply(lambda x: x[-1] in components)]
-    stations = list(set(jobs["STATION"].values))
+    stations = list(set(dbFilter["STATION"].values))
 
     ### Create inventory object
     for path, subdirs, files in os.walk(inventory_path):
@@ -229,6 +205,7 @@ def ppsd(
     parameters = {
         "n_cores": n_cores,
         "database_path": database_path,
+        "db_obj": db_obj,
         "output_path": output_path,
         "inventory": inventory,
         "components": components,
@@ -241,7 +218,5 @@ def ppsd(
         "period_step_octaves": period_step_octaves,
         "period_limits": period_limits,
         "db_bins": db_bins,
-        "tableName": tableName,
-        "jobs": jobs
     }
     PPSDPoolHandler(stations, parameters)
