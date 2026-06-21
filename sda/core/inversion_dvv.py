@@ -506,15 +506,18 @@ class Inversion:
         
         N2D_ci = torch.exp(-A/l) / (2*torch.pi*A*c) * self._p2D_i(t-A/c, B, c, l, dr)
         N2D_ic = torch.exp(-B/l) / (2*torch.pi*B*c) * self._p2D_i(t-B/c, A, c, l, dr)
-        N2D_ii = self._integrate(self._N2D_ii, 0, t, 273, t, A, B, c, l, dr)
+        N2D_ii = self._integrate(self._N2D_ii, 0, t, 20, t, A, B, c, l, dr)
         p2D_SR = self._p2D_c(t, rSR, c, l, dr) + self._p2D_i(t, rSR, c, l, dr)
-        KSurf = (N2D_ci + N2D_ic + N2D_ii) / p2D_SR 
-        # KSurf *= t/torch.sum(KSurf) # Normalise K so that the integrale gives the lapse time t
-        if self.zmin != self.zmax : KSurf = KSurf.repeat(1, 1, len(z))
+        KSurf =  (N2D_ci + N2D_ic + N2D_ii) / p2D_SR 
+        KSurf *= t/torch.sum(KSurf) # Normalise K so that the integrale gives the lapse time t
+        # if self.zmin != self.zmax : KSurf = KSurf.repeat(1, 1, len(z))
         KSurf = KSurf.cpu().numpy()
         
         
         ### KBody (3D) #########################
+        if self.zmin == self.zmax:
+            # If 2D kernel: we compute KBody in 3D and stack in the vertical dimension
+            z = torch.linspace(0, 2*l, 10, device=self.device, dtype=torch.float32)
         X, Y, Z = torch.meshgrid(x, y, z, indexing='ij')
         A = torch.sqrt((Spos[0] - X)**2 + (Spos[1] - Y)**2 + (Spos[2] - Z)**2) + self.dr/4
         B = torch.sqrt((Rpos[0] - X)**2 + (Rpos[1] - Y)**2 + (Rpos[2] - Z)**2) + self.dr/4
@@ -522,96 +525,32 @@ class Inversion:
         
         N3D_ci = torch.exp(-A/l) / (4*torch.pi*A**2*c) * self._p3D_i(t-A/c, B, c, l, dr)
         N3D_ic = torch.exp(-B/l) / (4*torch.pi*B**2*c) * self._p3D_i(t-B/c, A, c, l, dr)
-        N3D_ii = self._integrate(self._N3D_ii, 0, t, 500, t, A, B, c, l, dr)
+        N3D_ii = self._integrate(self._N3D_ii, 0, t, 20, t, A, B, c, l, dr)
         p3D_SR = self._p3D_c(t, rSR, c, l, dr) + self._p3D_i(t, rSR, c, l, dr)
         KBody = (N3D_ci + N3D_ic + N3D_ii) / p3D_SR
-        # KBody *= t/torch.sum(KBody) # Normalise K so that the integrale gives the lapse time t
+        KBody *= t/torch.sum(KBody) # Normalise K so that the integrale gives the lapse time t
+        if self.zmin == self.zmax:
+            KBody = torch.nansum(KBody, axis=-1)
         KBody = KBody.cpu().numpy()
-        
-    
-        ###########################################################
-        # N2D_ci = N2D_ci.cpu().numpy().squeeze()
-        # N2D_ic = N2D_ic.cpu().numpy().squeeze()
-        # N2D_ii = N2D_ii.cpu().numpy().squeeze()
-        # p2D_SR = p2D_SR.cpu().numpy().squeeze()
-        # KSurf2 = KSurf.squeeze()
-        
-        # N3D_ci = N3D_ci.cpu().numpy().squeeze()
-        # N3D_ic = N3D_ic.cpu().numpy().squeeze()
-        # N3D_ii = N3D_ii.cpu().numpy().squeeze()
-        # p3D_SR = p3D_SR.cpu().numpy().squeeze()
-        # KBody2 = KBody.squeeze()
-        
-        # fig, axs = plt.subplots(1,4,figsize=(23,5))
-        # ax=axs[0]
-        # vmin = 0
-        # vmax = np.nanquantile(N2D_ci, 0.995)
-        # ax.set_title("N2D_ci")
-        # p = ax.pcolormesh(N2D_ci.T, vmin=vmin, vmax=vmax, cmap="Reds")
-        # fig.colorbar(p, orientation="vertical")
-        # ax=axs[1]
-        # vmin = 0
-        # vmax = np.nanquantile(N2D_ic, 0.995)
-        # ax.set_title("N2D_ic")
-        # p = ax.pcolormesh(N2D_ic.T, vmin=vmin, vmax=vmax, cmap="Reds")
-        # fig.colorbar(p, orientation="vertical")
-        # ax=axs[2]
-        # vmin = 0
-        # vmax = np.nanquantile(N2D_ii, 0.995)
-        # ax.set_title("N2D_ii")
-        # p = ax.pcolormesh(N2D_ii.T, vmin=vmin, vmax=vmax, cmap="Reds")
-        # fig.colorbar(p, orientation="vertical")
-        # ax=axs[3]
-        # vmin = 0
-        # vmax = np.nanquantile(KSurf2, 0.995)
-        # ax.set_title("KSurf")
-        # p = ax.pcolormesh(KSurf2.T, vmin=vmin, vmax=vmax, cmap="Reds")
-        # fig.colorbar(p, orientation="vertical")
-        # plt.savefig("/data1/fmattern/WORK/these/inversion/class_inversion/RESULTS/testK1.png",dpi=300)
-        # plt.show()
-        
-        # fig, axs = plt.subplots(1,4,figsize=(23,5))
-        # ax=axs[0]
-        # vmin = 0
-        # vmax = np.nanquantile(N3D_ci, 0.995)
-        # ax.set_title("N3D_ci")
-        # p = ax.pcolormesh(N3D_ci.T, vmin=vmin, vmax=vmax, cmap="Reds")
-        # fig.colorbar(p, orientation="vertical")
-        # ax=axs[1]
-        # vmin = 0
-        # vmax = np.nanquantile(N3D_ic, 0.995)
-        # ax.set_title("N3D_ic")
-        # p = ax.pcolormesh(N3D_ic.T, vmin=vmin, vmax=vmax, cmap="Reds")
-        # fig.colorbar(p, orientation="vertical")
-        # ax=axs[2]
-        # vmin = 0
-        # vmax = np.nanquantile(N3D_ii, 0.995)
-        # ax.set_title("N3D_ii")
-        # p = ax.pcolormesh(N3D_ii.T, vmin=vmin, vmax=vmax, cmap="Reds")
-        # fig.colorbar(p, orientation="vertical")
-        # ax=axs[3]
-        # vmin = 0
-        # vmax = np.nanquantile(KBody2, 0.995)
-        # ax.set_title("KBody")
-        # p = ax.pcolormesh(KBody2.T, vmin=vmin, vmax=vmax, cmap="Reds")
-        # fig.colorbar(p, orientation="vertical")
-        # plt.savefig("/data1/fmattern/WORK/these/inversion/class_inversion/RESULTS/testK2.png",dpi=300)
-        # plt.show()
-        ###########################################################
-        
 
-        # Compute sensitivity kernels of rayleigh waves fundamental mode
-        Ksurf_ballistic_1D = self._Ksurf_fond(self.velocity_model, self.z, freq)
-        Ksurf_ballistic_3D = np.zeros_like(KSurf) * np.nan
-        for i in range(len(self.x)):
-            for j in range(len(self.y)):
-                Ksurf_ballistic_3D[i,j,:] = Ksurf_ballistic_1D  
-        
-        t = t.cpu().numpy()
-        K = alpha*KSurf*Ksurf_ballistic_3D + (1-alpha)*KBody
-        K = K.squeeze()
-        K = K.T # On oriente correctement la matrice pour l'affichage
-        # K *= t/np.sum(K) # Normalise K so that the integrale gives the lapse time t
+
+        ### KTotal #############################
+        if self.zmin == self.zmax:
+            KSurf = KSurf.squeeze()
+            KBody = KBody.squeeze()
+            K = alpha*KSurf + (1-alpha)*KBody
+            K = K.squeeze().T
+
+        else:
+            # Compute sensitivity kernels of rayleigh waves fundamental mode
+            Ksurf_ballistic_1D = self._Ksurf_fond(self.velocity_model, self.z, freq)
+            Ksurf_ballistic_3D = np.zeros_like(KSurf) * np.nan
+            for i in range(len(self.x)):
+                for j in range(len(self.y)):
+                    Ksurf_ballistic_3D[i,j,:] = Ksurf_ballistic_1D  
+
+            K = alpha*KSurf*Ksurf_ballistic_3D + (1-alpha)*KBody
+            K = K.squeeze().T
 
         return K
     
@@ -719,18 +658,47 @@ class Inversion:
 
 
     def _integrate(self, func, a, b, n, *args):
-        # Discrétisation de l'intervalle
-        tau = torch.linspace(a, b, steps=n, device=self.device)
-        dtau = (b - a) / (n - 1)
-        
-        # Évaluation de la fonction
-        y = func(tau, *args)
-        
-        # Méthode des trapèzes
-        integral = torch.nansum(y, dim=3) * dtau
-        return integral 
-    
 
+        t, A, B, c, l, dr = args
+
+        a = torch.as_tensor(a, device=t.device, dtype=t.dtype)
+        b = torch.as_tensor(b, device=t.device, dtype=t.dtype)
+
+        eps = dr / 2
+
+        u0 = torch.maximum(a, (A + eps) / c)
+        u1 = torch.minimum(b, t - (B + eps) / c)
+
+        length = torch.clamp(u1 - u0, min=0.0)
+
+        x = torch.linspace(
+            0.0,
+            1.0,
+            steps=n,
+            device=t.device,
+            dtype=t.dtype,
+        )
+
+        u = u0.unsqueeze(-1) + length.unsqueeze(-1) * x
+
+        expanded_args = [
+            value.unsqueeze(-1)
+            if torch.is_tensor(value) and value.ndim > 0
+            else value
+            for value in args
+        ]
+
+        y = func(u, *expanded_args)
+
+        y = torch.nan_to_num(
+            y,
+            nan=0.0,
+            posinf=0.0,
+            neginf=0.0,
+        )
+
+        return length * torch.trapezoid(y, x=x, dim=-1)
+    
             
     def _Resolution(self, G, Cm, Cd):
         G = torch.tensor(G, dtype=torch.float32, device=self.device)
@@ -768,7 +736,7 @@ class Inversion:
 
     def lcurve(self, name, stdm_list=[1e-2,5e-2,1e-1,5e-1], lambda_list=[2,3,5,10], show_progress=True, show_2D=True, return_values=False):
         lcurve_model = Inversion(xmin=self.xmin*1e3, xmax=self.xmax*1e3, ymin=self.ymin*1e3, ymax=self.ymax*1e3, zmin=self.zmin, zmax=self.zmax, dr=self.dr, dz=self.dz)
-        lcurve_model.build_velocity_model(self.velocity_model)
+        if self.zmin != self.zmax: lcurve_model.build_velocity_model(self.velocity_model)
 
         try:
             Lambda0 = self.Lambda0
@@ -899,7 +867,7 @@ class Inversion:
         data_type = self.dataset[name]["data_type"]
 
         model = Inversion(xmin=self.xmin*1e3, xmax=self.xmax*1e3, ymin=self.ymin*1e3, ymax=self.ymax*1e3, zmin=self.zmin, zmax=self.zmax, dr=self.dr, dz=self.dz)
-        model.build_velocity_model(self.velocity_model)
+        if self.zmin != self.zmax: model.build_velocity_model(self.velocity_model)
         model.add_dataset(name,
                     self.dataset[name]["data"],
                     self.dataset[name]["coherence"],
@@ -953,55 +921,6 @@ class Inversion:
             r_half = sigma_fit * np.sqrt(2 * np.log(2)) / 1e3
             Rhalf[i,j] = r_half
             
-            ##########################################################
-            ### Méthode des moments
-            # i = k // len(x)
-            # j = k % len(x)
-            # resol = R[k,:].reshape((len(y),len(x)))
-            # x0, y0 = x[j], y[i]
-
-            # X, Y = np.meshgrid(x, y)
-            # Z = resol.copy()
-            # Xf = X.ravel(); Yf = Y.ravel(); Zf = Z.ravel()
-
-            # r = np.sqrt((Xf - x0)**2 + (Yf - y0)**2)
-
-            # w = np.clip(Zf, 0, None) # weights
-            # if w.sum() == 0:
-            #     sigma_moment = np.nan
-            # else:
-            #     thr = 1e-6 * w.max()
-            #     mask = w > thr
-            #     if mask.sum() == 0:
-            #         mask = w > 0
-            #     r2_mean = (w[mask] * r[mask]**2).sum() / w[mask].sum()
-            #     sigma_moment = np.sqrt(r2_mean / 2.0)
-
-            # r_half = sigma_moment * np.sqrt(2 * np.log(2)) / 1e3
-            # Rhalf[i, j] = r_half
-
-            ##########################################################
-            ### Méthode des écarts types
-            # i = k // len(x)
-            # j = k % len(x)
-            # resol = R[k,:].reshape((len(y),len(x)))
-            # x0, y0 = x[j], y[i]
-
-            # X, Y = np.meshgrid(x, y)
-            # Z = resol.copy()
-            # XX = X.ravel(); YY = Y.ravel()
-
-            # r = np.sqrt((XX - x0)**2 + (YY - y0)**2)
-            # w = Z.ravel()
-            # w = np.clip(w, 0, None)
-            
-            # r_mean = np.average(r, weights=w)
-            # sigma = np.sqrt(np.average((r - r_mean)**2, weights=w))
-            # r_half = sigma * np.sqrt(2 * np.log(2)) / 1e3
-            # Rhalf[i, j] = r_half
-
-            ##########################################################
-            
             if not return_values:
                 if k in k_list:
                     fig, ax = plt.subplots(1,1,figsize=(6,6))
@@ -1033,24 +952,11 @@ class Inversion:
                     
                     ax.set_title(title, loc="left", fontsize=9)
                     
-                    # ax.set_title(r"Texte normal, $\mathit{italique}$, équation $x^2+y^2=z^2$, $\mathbf{GRAS}$", loc="left", fontsize=8)
-                    
-                    # Z_fit = A_fit * np.exp(-((X-x0)**2 + (Y-y0)**2)/(2*sigma_fit**2))
-                    # ax.contour(
-                    #     X + model.dr/2*1e3,
-                    #     Y + model.dr/2*1e3,
-                    #     Z_fit,
-                    #     levels=[A_fit/2],
-                    #     colors='red',
-                    #     linewidths=1.5,
-                    # )
-                    
                     from matplotlib.patches import Circle
                     circle = Circle((x0 + model.dr/2*1e3, y0 + model.dr/2*1e3), r_half*1e3, fill=False, color='red')
                     ax.add_patch(circle)
                 
                 
-            ##########################################################
             
         if return_values:
             return x, y, Rhalf
@@ -1069,8 +975,7 @@ class Inversion:
             ax.set_xlabel("X [m]")
             ax.set_ylabel("Y [m]")
             plt.show()  
-        
-        ##########################################################
+
             
 
     def restitution_index(self, name, stdm=None, Lambda=None):
@@ -1080,7 +985,7 @@ class Inversion:
         data_type = self.dataset[name]["data_type"]
 
         model = Inversion(xmin=self.xmin*1e3, xmax=self.xmax*1e3, ymin=self.ymin*1e3, ymax=self.ymax*1e3, zmin=self.zmin, zmax=self.zmax, dr=self.dr, dz=self.dz)
-        model.build_velocity_model(self.velocity_model)
+        if self.zmin != self.zmax: model.build_velocity_model(self.velocity_model)
         model.add_dataset(name,
                     self.dataset[name]["data"],
                     self.dataset[name]["coherence"],
@@ -1136,7 +1041,7 @@ class Inversion:
             coherence = self.dataset[name]["coherence"]
 
         model = Inversion(xmin=self.xmin*1e3, xmax=self.xmax*1e3, ymin=self.ymin*1e3, ymax=self.ymax*1e3, zmin=self.zmin, zmax=self.zmax, dr=self.dr, dz=self.dz)
-        model.build_velocity_model(self.velocity_model)
+        if self.zmin != self.zmax: model.build_velocity_model(self.velocity_model)
         model.add_dataset(name,
                     data,
                     coherence,
@@ -1195,7 +1100,7 @@ class Inversion:
         data_type = self.dataset[name]["data_type"]
 
         cboard = Inversion(xmin=self.xmin*1e3, xmax=self.xmax*1e3, ymin=self.ymin*1e3, ymax=self.ymax*1e3, zmin=self.zmin, zmax=self.zmax, dr=self.dr, dz=self.dz)
-        cboard.build_velocity_model(self.velocity_model)
+        if self.zmin != self.zmax: cboard.build_velocity_model(self.velocity_model)
         cboard.build_Cm(stdm=self.stdm, Lambda=self.Lambda, Lambda0=self.Lambda0, show_progress=False)
         
         synt_x = np.arange(cboard.xmin, cboard.xmax+size, size)
@@ -1330,7 +1235,7 @@ class Inversion:
 
         # Collect current model/data information
         model = Inversion(xmin=self.xmin*1e3, xmax=self.xmax*1e3, ymin=self.ymin*1e3, ymax=self.ymax*1e3, zmin=self.zmin, zmax=self.zmax, dr=self.dr, dz=self.dz)
-        model.build_velocity_model(self.velocity_model)
+        if self.zmin != self.zmax: model.build_velocity_model(self.velocity_model)
         model.build_Cm(stdm=self.stdm, Lambda=self.Lambda, Lambda0=self.Lambda0, show_progress=False)
 
         # Create synthetic model
@@ -1483,7 +1388,7 @@ class Inversion:
         if Lambda == None: Lambda = self.Lambda
 
         model = Inversion(xmin=self.xmin*1e3, xmax=self.xmax*1e3, ymin=self.ymin*1e3, ymax=self.ymax*1e3, zmin=self.zmin, zmax=self.zmax, dr=self.dr, dz=self.dz)
-        model.build_velocity_model(self.velocity_model)
+        if self.zmin != self.zmax: model.build_velocity_model(self.velocity_model)
         model.add_dataset(name,
                         self.dataset[name]["data"],
                         self.dataset[name]["coherence"],
@@ -1589,7 +1494,7 @@ class Inversion:
 
         # Collect current model/data information
         model = Inversion(xmin=self.xmin*1e3, xmax=self.xmax*1e3, ymin=self.ymin*1e3, ymax=self.ymax*1e3, zmin=self.zmin, zmax=self.zmax, dr=self.dr, dz=self.dz)
-        model.build_velocity_model(self.velocity_model)
+        if self.zmin != self.zmax: model.build_velocity_model(self.velocity_model)
         model.build_Cm(stdm=self.stdm, Lambda=self.Lambda, Lambda0=self.Lambda0, show_progress=False)
 
         # Synthetic checkerboard model
@@ -1811,7 +1716,7 @@ class Inversion:
 
         # Collect current model/data information
         model = Inversion(xmin=self.xmin*1e3, xmax=self.xmax*1e3, ymin=self.ymin*1e3, ymax=self.ymax*1e3, zmin=self.zmin, zmax=self.zmax, dr=self.dr, dz=self.dz)
-        model.build_velocity_model(self.velocity_model)
+        if self.zmin != self.zmax: model.build_velocity_model(self.velocity_model)
         model.build_Cm(stdm=self.stdm, Lambda=self.Lambda, Lambda0=self.Lambda0, show_progress=False)
 
         # Create synthetic model
