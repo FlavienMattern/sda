@@ -541,14 +541,10 @@ class Inversion:
             K = K.squeeze().T
 
         else:
-            # Compute sensitivity kernels of rayleigh waves fundamental mode
             Ksurf_ballistic_1D = self._Ksurf_fond(self.velocity_model, self.z, freq)
-            Ksurf_ballistic_3D = np.zeros_like(KSurf) * np.nan
-            for i in range(len(self.x)):
-                for j in range(len(self.y)):
-                    Ksurf_ballistic_3D[i,j,:] = Ksurf_ballistic_1D  
-
-            K = alpha*KSurf*Ksurf_ballistic_3D + (1-alpha)*KBody
+            Ksurf_ballistic_1D = np.asarray(Ksurf_ballistic_1D)
+            Ksurf_ballistic_3D = KSurf * Ksurf_ballistic_1D[None, None, :]
+            K = alpha * Ksurf_ballistic_3D + (1 - alpha) * KBody
             K = K.squeeze().T
 
         return K
