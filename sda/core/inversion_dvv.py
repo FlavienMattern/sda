@@ -500,7 +500,7 @@ class Inversion:
         X, Y = torch.meshgrid(x, y, indexing='ij')
         A = torch.sqrt((Spos[0] - X)**2 + (Spos[1] - Y)**2) + self.dr/4
         B = torch.sqrt((Rpos[0] - X)**2 + (Rpos[1] - Y)**2) + self.dr/4
-        # Note : We add a slight distance shift of dr/4 to avoid singularities in the computation of itensitities
+        # Note : We add a slight distance shift of dr/4 to avoid singularities
         A = A.unsqueeze(-1)
         B = B.unsqueeze(-1)
         
@@ -508,9 +508,8 @@ class Inversion:
         N2D_ic = torch.exp(-B/l) / (2*torch.pi*B*c) * self._p2D_i(t-B/c, A, c, l, dr)
         N2D_ii = self._integrate(self._N2D_ii, 0, t, 20, t, A, B, c, l, dr)
         p2D_SR = self._p2D_c(t, rSR, c, l, dr) + self._p2D_i(t, rSR, c, l, dr)
-        KSurf =  (N2D_ci + N2D_ic + N2D_ii) / p2D_SR 
-        KSurf *= t/torch.sum(KSurf) # Normalise K so that the integrale gives the lapse time t
-        # if self.zmin != self.zmax : KSurf = KSurf.repeat(1, 1, len(z))
+        KSurf = (N2D_ci + N2D_ic + N2D_ii) / p2D_SR 
+        KSurf *= t / (torch.sum(KSurf) * self.dr**2) # Normalise K so that the integrale gives the lapse time t
         KSurf = KSurf.cpu().numpy()
         
         
@@ -521,18 +520,18 @@ class Inversion:
         X, Y, Z = torch.meshgrid(x, y, z, indexing='ij')
         A = torch.sqrt((Spos[0] - X)**2 + (Spos[1] - Y)**2 + (Spos[2] - Z)**2) + self.dr/4
         B = torch.sqrt((Rpos[0] - X)**2 + (Rpos[1] - Y)**2 + (Rpos[2] - Z)**2) + self.dr/4
-        # Note : We add a slight distance shift of dr/4 to avoid singularities in the computation of itensitities
+        # Note : We add a slight distance shift of dr/4 to avoid singularities
         
         N3D_ci = torch.exp(-A/l) / (4*torch.pi*A**2*c) * self._p3D_i(t-A/c, B, c, l, dr)
         N3D_ic = torch.exp(-B/l) / (4*torch.pi*B**2*c) * self._p3D_i(t-B/c, A, c, l, dr)
         N3D_ii = self._integrate(self._N3D_ii, 0, t, 20, t, A, B, c, l, dr)
         p3D_SR = self._p3D_c(t, rSR, c, l, dr) + self._p3D_i(t, rSR, c, l, dr)
         KBody = (N3D_ci + N3D_ic + N3D_ii) / p3D_SR
-        KBody *= t/torch.sum(KBody) # Normalise K so that the integrale gives the lapse time t
+        KBody *= t / (torch.sum(KBody) * self.dr**3) # Normalise K so that the integrale gives the lapse time t
         if self.zmin == self.zmax:
             KBody = torch.nansum(KBody, axis=-1)
         KBody = KBody.cpu().numpy()
-
+        
 
         ### KTotal #############################
         if self.zmin == self.zmax:
@@ -553,6 +552,7 @@ class Inversion:
             K = K.squeeze().T
 
         return K
+
     
 
             
@@ -659,46 +659,47 @@ class Inversion:
 
     def _integrate(self, func, a, b, n, *args):
 
-        t, A, B, c, l, dr = args
+            t, A, B, c, l, dr = args
 
-        a = torch.as_tensor(a, device=t.device, dtype=t.dtype)
-        b = torch.as_tensor(b, device=t.device, dtype=t.dtype)
+            a = torch.as_tensor(a, device=t.device, dtype=t.dtype)
+            b = torch.as_tensor(b, device=t.device, dtype=t.dtype)
 
-        eps = dr / 2
+            eps = dr / 2
 
-        u0 = torch.maximum(a, (A + eps) / c)
-        u1 = torch.minimum(b, t - (B + eps) / c)
+            u0 = torch.maximum(a, (A + eps) / c)
+            u1 = torch.minimum(b, t - (B + eps) / c)
 
-        length = torch.clamp(u1 - u0, min=0.0)
+            length = torch.clamp(u1 - u0, min=0.0)
 
-        x = torch.linspace(
-            0.0,
-            1.0,
-            steps=n,
-            device=t.device,
-            dtype=t.dtype,
-        )
+            x = torch.linspace(
+                0.0,
+                1.0,
+                steps=n,
+                device=t.device,
+                dtype=t.dtype,
+            )
 
-        u = u0.unsqueeze(-1) + length.unsqueeze(-1) * x
+            u = u0.unsqueeze(-1) + length.unsqueeze(-1) * x
 
-        expanded_args = [
-            value.unsqueeze(-1)
-            if torch.is_tensor(value) and value.ndim > 0
-            else value
-            for value in args
-        ]
+            expanded_args = [
+                value.unsqueeze(-1)
+                if torch.is_tensor(value) and value.ndim > 0
+                else value
+                for value in args
+            ]
 
-        y = func(u, *expanded_args)
+            y = func(u, *expanded_args)
 
-        y = torch.nan_to_num(
-            y,
-            nan=0.0,
-            posinf=0.0,
-            neginf=0.0,
-        )
+            y = torch.nan_to_num(
+                y,
+                nan=0.0,
+                posinf=0.0,
+                neginf=0.0,
+            )
 
-        return length * torch.trapezoid(y, x=x, dim=-1)
+            return length * torch.trapezoid(y, x=x, dim=-1)
     
+
             
     def _Resolution(self, G, Cm, Cd):
         G = torch.tensor(G, dtype=torch.float32, device=self.device)
