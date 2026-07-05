@@ -452,9 +452,9 @@ class Inversion:
             if data_type == "coherence":
                 std = 1-coh
             elif data_type == "velocity":
-                std = np.sqrt(1-coh**2) / (2*coh) * np.sqrt( (6*np.sqrt(np.pi/2)*T) / (wc**2 * (tf**3 - ti**3)) )
+                std = 100*np.sqrt(1-coh**2) / (2*coh) * np.sqrt( (6*np.sqrt(np.pi/2)*T) / (wc**2 * (tf**3 - ti**3)) )
             
-            self.Cd[name] = std.astype(np.float32)
+            self.Cd[name] = (std**2).astype(np.float32)
                     
 
 
@@ -509,7 +509,7 @@ class Inversion:
         N2D_ii = self._integrate(self._N2D_ii, 0, t, 20, t, A, B, c, l, dr)
         p2D_SR = self._p2D_c(t, rSR, c, l, dr) + self._p2D_i(t, rSR, c, l, dr)
         KSurf = (N2D_ci + N2D_ic + N2D_ii) / p2D_SR 
-        KSurf *= t / (torch.sum(KSurf) * self.dr**2) # Normalise K so that the integrale gives the lapse time t
+        KSurf = KSurf * t / (torch.sum(KSurf)) # Normalise K so that the integrale gives the lapse time t
         KSurf = KSurf.cpu().numpy()
         
         
@@ -527,7 +527,7 @@ class Inversion:
         N3D_ii = self._integrate(self._N3D_ii, 0, t, 20, t, A, B, c, l, dr)
         p3D_SR = self._p3D_c(t, rSR, c, l, dr) + self._p3D_i(t, rSR, c, l, dr)
         KBody = (N3D_ci + N3D_ic + N3D_ii) / p3D_SR
-        KBody *= t / (torch.sum(KBody) * self.dr**3) # Normalise K so that the integrale gives the lapse time t
+        KBody = KBody * t / (torch.sum(KBody)) # Normalise K so that the integrale gives the lapse time t
         if self.zmin == self.zmax:
             KBody = torch.nansum(KBody, axis=-1)
         KBody = KBody.cpu().numpy()
