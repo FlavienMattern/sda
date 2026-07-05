@@ -1,0 +1,2355 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../../core/inversion/">
+      
+      
+        <link rel="next" href="../scan_data/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>download_data - Seismological Data Analysis (SDA)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../styles/style.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="blue">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#sda.process.download_data.main.download_data" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Seismological Data Analysis (SDA)" class="md-header__button md-logo" aria-label="Seismological Data Analysis (SDA)" data-md-component="logo">
+      
+  <img src="../../images/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Seismological Data Analysis (SDA)
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              download_data
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="blue"  aria-label="Dark Mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark Mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="blue"  aria-label="Light Mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light Mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/FlavienMattern/sda.git" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../installation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tutorials/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../core/function1/" class="md-tabs__link">
+          
+  
+  
+  SDA API
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../references/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  References
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Seismological Data Analysis (SDA)" class="md-nav__button md-logo" aria-label="Seismological Data Analysis (SDA)" data-md-component="logo">
+      
+  <img src="../../images/logo.png" alt="logo">
+
+    </a>
+    Seismological Data Analysis (SDA)
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/FlavienMattern/sda.git" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/dataset_format/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dataset formatting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/ppsd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Computing PPSD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/xcorr_noise/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ambient Noise Correlations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/invert_dvv/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inverting dv/v
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SDA API
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    SDA API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sda.core
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    sda.core
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../core/function1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    function1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../core/inversion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    inversion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sda.process
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    sda.process
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    download_data
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    download_data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sda.process.download_data.main.download_data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        download_data
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scan_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    scan_data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../xcorr_noise/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    xcorr_noise
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../xcorr_noise_postprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    xcorr_noise_postprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../xcorr_noise_monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    xcorr_noise_monitoring
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    References
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../../core/function1/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    SDA API
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="./" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    sda.process
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+  <h1>download_data</h1>
+
+<div class="doc doc-object doc-module">
+
+
+
+
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="sda.process.download_data.main.download_data" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">download_data</span><span class="p">(</span><span class="n">outputPath</span><span class="p">,</span> <span class="n">dataPath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">domainType</span><span class="o">=</span><span class="s1">&#39;rectangular&#39;</span><span class="p">,</span> <span class="n">latitudes</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">longitudes</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">latitude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minradius</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maxradius</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">starttime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">endtime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">station_starttime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">station_endtime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">chunklength_in_sec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">network</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">station</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exclude_networks</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(),</span> <span class="n">exclude_stations</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(),</span> <span class="n">limit_stations_to_inventory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">reject_channels_with_gaps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">minimum_length</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">sanitize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">minimum_interstation_distance_in_m</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">channel_priorities</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;HH[ZNE12]&#39;</span><span class="p">,</span> <span class="s1">&#39;BH[ZNE12]&#39;</span><span class="p">,</span> <span class="s1">&#39;MH[ZNE12]&#39;</span><span class="p">,</span> <span class="s1">&#39;EH[ZNE12]&#39;</span><span class="p">,</span> <span class="s1">&#39;LH[ZNE12]&#39;</span><span class="p">,</span> <span class="s1">&#39;HL[ZNE12]&#39;</span><span class="p">,</span> <span class="s1">&#39;BL[ZNE12]&#39;</span><span class="p">,</span> <span class="s1">&#39;ML[ZNE12]&#39;</span><span class="p">,</span> <span class="s1">&#39;EL[ZNE12]&#39;</span><span class="p">,</span> <span class="s1">&#39;LL[ZNE12]&#39;</span><span class="p">,</span> <span class="s1">&#39;SH[ZNE12]&#39;</span><span class="p">),</span> <span class="n">location_priorities</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;00&#39;</span><span class="p">,</span> <span class="s1">&#39;10&#39;</span><span class="p">,</span> <span class="s1">&#39;01&#39;</span><span class="p">,</span> <span class="s1">&#39;20&#39;</span><span class="p">,</span> <span class="s1">&#39;02&#39;</span><span class="p">,</span> <span class="s1">&#39;30&#39;</span><span class="p">,</span> <span class="s1">&#39;03&#39;</span><span class="p">,</span> <span class="s1">&#39;40&#39;</span><span class="p">,</span> <span class="s1">&#39;04&#39;</span><span class="p">,</span> <span class="s1">&#39;50&#39;</span><span class="p">,</span> <span class="s1">&#39;05&#39;</span><span class="p">,</span> <span class="s1">&#39;60&#39;</span><span class="p">,</span> <span class="s1">&#39;06&#39;</span><span class="p">,</span> <span class="s1">&#39;70&#39;</span><span class="p">,</span> <span class="s1">&#39;07&#39;</span><span class="p">,</span> <span class="s1">&#39;80&#39;</span><span class="p">,</span> <span class="s1">&#39;08&#39;</span><span class="p">,</span> <span class="s1">&#39;90&#39;</span><span class="p">,</span> <span class="s1">&#39;09&#39;</span><span class="p">),</span> <span class="n">providers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">configure_logging</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mseed_storage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stationxml_storage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">download_chunk_size_in_mb</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">threads_per_client</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">print_report</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Download seismic data from using ObsPy's MassDownloader. This function downloads waveform data and station metadata for a specified geographical domain and time period from various seismic data providers.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>outputPath</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path to the main output directory where data will be stored.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>dataPath</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path to the dataset directory. If <code>None</code>, defaults to <code>&lt;outputPath&gt;/data</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>domainType</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Type of geographical domain. Options: <code>"rectangular"</code>, <code>"circular"</code>, <code>"global"</code>. Default is <code>"rectangular"</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;rectangular&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>latitudes</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(latmin, latmax)</code> - Minimum and maximum latitude for rectangular domain.</p>
+              </div>
+            </td>
+            <td>
+                  <code>(None, None)</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>longitudes</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(lonmin, lonmax)</code> - Minimum and maximum longitude for rectangular domain.</p>
+              </div>
+            </td>
+            <td>
+                  <code>(None, None)</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>latitude</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Center latitude for circular domain.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>longitude</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Center longitude for circular domain.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>minradius</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minimum distance from center of circular domain (in km).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>maxradius</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum distance from center of circular domain (in km).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>starttime</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="obspy.UTCDateTime">UTCDateTime</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Start time for data download.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>endtime</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="obspy.UTCDateTime">UTCDateTime</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>End time for data download.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>station_starttime</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="obspy.UTCDateTime">UTCDateTime</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Stations must have been operational at or before this time.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>station_endtime</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="obspy.UTCDateTime">UTCDateTime</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Stations must have been operational at or after this time.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>chunklength_in_sec</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Length of one chunk (i.e., one file) in seconds for splitting downloads.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>network</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Network code(s) to download (e.g., <code>"IU"</code> or <code>"IU,G*"</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>station</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Station code(s) to download (e.g., <code>"ANMO"</code> or <code>"A*"</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>location</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Location code(s) to download (e.g., <code>"00"</code>, <code>"00,01,10"</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>channel</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Channel code(s) to download (e.g., <code>"BHZ"</code> or <code>"BH*"</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>exclude_networks</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Network codes to exclude from download (e.g., <code>["BW", "GR"]</code>, <code>["F*", "G?"]</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>exclude_stations</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Station codes to exclude from download (e.g., <code>["AL??", "*O"]</code>, <code>["STR", "W*"]</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span>()</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>limit_stations_to_inventory</code>
+            </td>
+            <td>
+                  <code><span title="Inventory">Inventory</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If provided, only stations in this inventory will be downloaded. All other restrictions still apply, this just serves to further limit the set of stations to download.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>reject_channels_with_gaps</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Reject channels that have gaps or overlaps. Default is <code>True</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>minimum_length</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minimum length of trace as fraction of requested time span (0.0-1.0). Default is <code>0.9</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.9</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>sanitize</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Ensure stations are sufficiently separated and clean metadata. Default is <code>True</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>minimum_interstation_distance_in_m</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minimum distance between stations in meters when <code>sanitize=True</code>. Default is <code>1000</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>1000</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>channel_priorities</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Priority order for channel selection when multiple options exist. Default is <code>("HH[ZNE12]", "BH[ZNE12]", ...)</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>(&#39;HH[ZNE12]&#39;, &#39;BH[ZNE12]&#39;, &#39;MH[ZNE12]&#39;, &#39;EH[ZNE12]&#39;, &#39;LH[ZNE12]&#39;, &#39;HL[ZNE12]&#39;, &#39;BL[ZNE12]&#39;, &#39;ML[ZNE12]&#39;, &#39;EL[ZNE12]&#39;, &#39;LL[ZNE12]&#39;, &#39;SH[ZNE12]&#39;)</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>location_priorities</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Priority order for location codes when multiple options exist. Default is <code>("", "00", "10", ...)</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>(&#39;&#39;, &#39;00&#39;, &#39;10&#39;, &#39;01&#39;, &#39;20&#39;, &#39;02&#39;, &#39;30&#39;, &#39;03&#39;, &#39;40&#39;, &#39;04&#39;, &#39;50&#39;, &#39;05&#39;, &#39;60&#39;, &#39;06&#39;, &#39;70&#39;, &#39;07&#39;, &#39;80&#39;, &#39;08&#39;, &#39;90&#39;, &#39;09&#39;)</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>providers</code>
+            </td>
+            <td>
+                  <code><span title="list">list</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of data providers (e.g., <code>["RESIF", "IRIS"]</code>). If <code>None</code>, all known providers are considered. Can also be a list of manually configured FDSN clients.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>debug</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Enable debug mode for detailed logging. Default is <code>False</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>configure_logging</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Configure logging for the MassDownloader. Default is <code>True</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>mseed_storage</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="callable">callable</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path template or function for storing miniSEED files. If <code>None</code>, uses default storage pattern via <code>get_mseed_storage()</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>stationxml_storage</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path template for storing StationXML files. If <code>None</code>, defaults to <code>&lt;dataPath&gt;/inventory/{network}/{station}.xml</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>download_chunk_size_in_mb</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Size of download chunks in megabytes. Default is <code>20</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>20</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>threads_per_client</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of parallel download threads per client. Default is <code>3</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>3</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>print_report</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Print download report upon completion. Default is <code>True</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>None</code></p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Creates output directories if they don't exist.</li>
+<li>Uses ObsPy's MassDownloader for parallel downloads from multiple providers.</li>
+<li>Supports rectangular, circular, and global domain selections.</li>
+<li>Automatically handles channel and location code prioritization.</li>
+<li>The <code>mseed_storage</code> can be either a string path template or a callable function that returns storage paths.</li>
+</ul>
+</details>
+
+<details class="example" open>
+  <summary>Example</summary>
+  <div class="highlight"><pre><span></span><code>        <span class="kn">from</span><span class="w"> </span><span class="nn">sda.process</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_data</span>
+
+        <span class="c1"># Download data for a rectangular region</span>
+        <span class="n">download_data</span><span class="p">(</span>
+            <span class="n">outputPath</span><span class="o">=</span><span class="s2">&quot;/path/to/output&quot;</span><span class="p">,</span>
+            <span class="n">domainType</span><span class="o">=</span><span class="s2">&quot;rectangular&quot;</span><span class="p">,</span>
+            <span class="n">latitudes</span><span class="o">=</span><span class="p">(</span><span class="mf">40.0</span><span class="p">,</span> <span class="mf">45.0</span><span class="p">),</span>
+            <span class="n">longitudes</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">120.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">115.0</span><span class="p">),</span>
+            <span class="n">starttime</span><span class="o">=</span><span class="s2">&quot;2023-01-01&quot;</span><span class="p">,</span>
+            <span class="n">endtime</span><span class="o">=</span><span class="s2">&quot;2023-01-02&quot;</span><span class="p">,</span>
+            <span class="n">network</span><span class="o">=</span><span class="s2">&quot;TA&quot;</span><span class="p">,</span>
+            <span class="n">channel</span><span class="o">=</span><span class="s2">&quot;BHZ&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Download data for a circular region around a point</span>
+        <span class="n">download_data</span><span class="p">(</span>
+            <span class="n">outputPath</span><span class="o">=</span><span class="s2">&quot;/path/to/output&quot;</span><span class="p">,</span>
+            <span class="n">domainType</span><span class="o">=</span><span class="s2">&quot;circular&quot;</span><span class="p">,</span>
+            <span class="n">latitude</span><span class="o">=</span><span class="mf">35.0</span><span class="p">,</span>
+            <span class="n">longitude</span><span class="o">=-</span><span class="mf">118.0</span><span class="p">,</span>
+            <span class="n">minradius</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">maxradius</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+            <span class="n">starttime</span><span class="o">=</span><span class="s2">&quot;2023-01-01&quot;</span><span class="p">,</span>
+            <span class="n">endtime</span><span class="o">=</span><span class="s2">&quot;2023-01-02&quot;</span>
+        <span class="p">)</span>
+</code></pre></div>
+</details>
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>sda/process/download_data/main.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">download_data</span><span class="p">(</span>
+        <span class="n">outputPath</span><span class="p">,</span>
+        <span class="n">dataPath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+
+        <span class="c1"># Domain definitions</span>
+        <span class="n">domainType</span><span class="o">=</span><span class="s2">&quot;rectangular&quot;</span><span class="p">,</span> <span class="c1"># [&quot;circular&quot;, &quot;rectangular&quot;, &quot;global&quot;]</span>
+        <span class="n">latitudes</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">),</span> <span class="c1"># (latmin, latmax) Tuple of Min/Max latitude for Rectangular domain</span>
+        <span class="n">longitudes</span><span class="o">=</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="kc">None</span><span class="p">),</span> <span class="c1"># (lomin, lonmax) Tuple of Min/Max longitude for Rectangular domain</span>
+        <span class="n">latitude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="c1"># Center latitude for Circular domain</span>
+        <span class="n">longitude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="c1"># Center longitude for Circular domain</span>
+        <span class="n">minradius</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="c1"># [km] Minimum distance from center of Circular domain</span>
+        <span class="n">maxradius</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="c1"># [km] Maximum distance from center of Circular domain</span>
+
+        <span class="c1"># Resctrictions</span>
+        <span class="n">starttime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">endtime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">station_starttime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">station_endtime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">chunklength_in_sec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">network</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">station</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">exclude_networks</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(),</span> <span class="n">exclude_stations</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(),</span>
+        <span class="n">limit_stations_to_inventory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">reject_channels_with_gaps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">minimum_length</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+        <span class="n">sanitize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">minimum_interstation_distance_in_m</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">channel_priorities</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;HH[ZNE12]&quot;</span><span class="p">,</span> <span class="s2">&quot;BH[ZNE12]&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;MH[ZNE12]&quot;</span><span class="p">,</span> <span class="s2">&quot;EH[ZNE12]&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;LH[ZNE12]&quot;</span><span class="p">,</span> <span class="s2">&quot;HL[ZNE12]&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;BL[ZNE12]&quot;</span><span class="p">,</span> <span class="s2">&quot;ML[ZNE12]&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;EL[ZNE12]&quot;</span><span class="p">,</span> <span class="s2">&quot;LL[ZNE12]&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;SH[ZNE12]&quot;</span><span class="p">),</span>
+        <span class="n">location_priorities</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;00&quot;</span><span class="p">,</span> <span class="s2">&quot;10&quot;</span><span class="p">,</span> <span class="s2">&quot;01&quot;</span><span class="p">,</span> <span class="s2">&quot;20&quot;</span><span class="p">,</span> <span class="s2">&quot;02&quot;</span><span class="p">,</span> <span class="s2">&quot;30&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;03&quot;</span><span class="p">,</span> <span class="s2">&quot;40&quot;</span><span class="p">,</span> <span class="s2">&quot;04&quot;</span><span class="p">,</span> <span class="s2">&quot;50&quot;</span><span class="p">,</span> <span class="s2">&quot;05&quot;</span><span class="p">,</span> <span class="s2">&quot;60&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;06&quot;</span><span class="p">,</span> <span class="s2">&quot;70&quot;</span><span class="p">,</span> <span class="s2">&quot;07&quot;</span><span class="p">,</span> <span class="s2">&quot;80&quot;</span><span class="p">,</span> <span class="s2">&quot;08&quot;</span><span class="p">,</span> <span class="s2">&quot;90&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;09&quot;</span><span class="p">),</span>
+
+        <span class="c1"># Massive Downloader object</span>
+        <span class="n">providers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="c1"># List of known providers (e.g. [&quot;RESIF&quot;, &quot;IRIS&quot;]). None: to consider all known providers</span>
+        <span class="c1"># It can be a list of client manually defined:</span>
+        <span class="c1"># my_client = Client(&quot;RESIF&quot;, user=&quot;username&quot;, password=&quot;pwd&quot;)</span>
+        <span class="c1"># providers = [my_client, &quot;IRIS&quot;, ...]</span>
+        <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">configure_logging</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+
+        <span class="c1"># Download properties</span>
+        <span class="n">mseed_storage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="c1"># &quot;DATA_PATH/waveforms/{network}/{station}/{location}/{channel}/{starttime}_{endtime}.mseed&quot;</span>
+        <span class="n">stationxml_storage</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">download_chunk_size_in_mb</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">threads_per_client</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">print_report</span><span class="o">=</span><span class="kc">True</span>
+
+    <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Download seismic data from using ObsPy&#39;s MassDownloader. This function downloads waveform data and station metadata for a specified geographical domain and time period from various seismic data providers.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        outputPath (str): Path to the main output directory where data will be stored.</span>
+<span class="sd">        dataPath (str, optional): Path to the dataset directory. If `None`, defaults to `&lt;outputPath&gt;/data`.</span>
+<span class="sd">        domainType (str, optional): Type of geographical domain. Options: `&quot;rectangular&quot;`, `&quot;circular&quot;`, `&quot;global&quot;`. Default is `&quot;rectangular&quot;`.</span>
+<span class="sd">        latitudes (tuple, optional): `(latmin, latmax)` - Minimum and maximum latitude for rectangular domain.</span>
+<span class="sd">        longitudes (tuple, optional): `(lonmin, lonmax)` - Minimum and maximum longitude for rectangular domain.</span>
+<span class="sd">        latitude (float, optional): Center latitude for circular domain.</span>
+<span class="sd">        longitude (float, optional): Center longitude for circular domain.</span>
+<span class="sd">        minradius (float, optional): Minimum distance from center of circular domain (in km).</span>
+<span class="sd">        maxradius (float, optional): Maximum distance from center of circular domain (in km).</span>
+<span class="sd">        starttime (str | UTCDateTime): Start time for data download.</span>
+<span class="sd">        endtime (str | UTCDateTime): End time for data download.</span>
+<span class="sd">        station_starttime (str | UTCDateTime, optional): Stations must have been operational at or before this time.</span>
+<span class="sd">        station_endtime (str | UTCDateTime, optional): Stations must have been operational at or after this time.</span>
+<span class="sd">        chunklength_in_sec (float, optional): Length of one chunk (i.e., one file) in seconds for splitting downloads.</span>
+<span class="sd">        network (str, optional): Network code(s) to download (e.g., `&quot;IU&quot;` or `&quot;IU,G*&quot;`).</span>
+<span class="sd">        station (str, optional): Station code(s) to download (e.g., `&quot;ANMO&quot;` or `&quot;A*&quot;`).</span>
+<span class="sd">        location (str, optional): Location code(s) to download (e.g., `&quot;00&quot;`, `&quot;00,01,10&quot;`).</span>
+<span class="sd">        channel (str, optional): Channel code(s) to download (e.g., `&quot;BHZ&quot;` or `&quot;BH*&quot;`).</span>
+<span class="sd">        exclude_networks (tuple, optional): Network codes to exclude from download (e.g., `[&quot;BW&quot;, &quot;GR&quot;]`, `[&quot;F*&quot;, &quot;G?&quot;]`).</span>
+<span class="sd">        exclude_stations (tuple, optional): Station codes to exclude from download (e.g., `[&quot;AL??&quot;, &quot;*O&quot;]`, `[&quot;STR&quot;, &quot;W*&quot;]`).</span>
+<span class="sd">        limit_stations_to_inventory (Inventory, optional): If provided, only stations in this inventory will be downloaded. All other restrictions still apply, this just serves to further limit the set of stations to download.</span>
+<span class="sd">        reject_channels_with_gaps (bool, optional): Reject channels that have gaps or overlaps. Default is `True`.</span>
+<span class="sd">        minimum_length (float, optional): Minimum length of trace as fraction of requested time span (0.0-1.0). Default is `0.9`.</span>
+<span class="sd">        sanitize (bool, optional): Ensure stations are sufficiently separated and clean metadata. Default is `True`.</span>
+<span class="sd">        minimum_interstation_distance_in_m (float, optional): Minimum distance between stations in meters when `sanitize=True`. Default is `1000`.</span>
+<span class="sd">        channel_priorities (tuple, optional): Priority order for channel selection when multiple options exist. Default is `(&quot;HH[ZNE12]&quot;, &quot;BH[ZNE12]&quot;, ...)`.</span>
+<span class="sd">        location_priorities (tuple, optional): Priority order for location codes when multiple options exist. Default is `(&quot;&quot;, &quot;00&quot;, &quot;10&quot;, ...)`.</span>
+<span class="sd">        providers (list, optional): List of data providers (e.g., `[&quot;RESIF&quot;, &quot;IRIS&quot;]`). If `None`, all known providers are considered. Can also be a list of manually configured FDSN clients.</span>
+<span class="sd">        debug (bool, optional): Enable debug mode for detailed logging. Default is `False`.</span>
+<span class="sd">        configure_logging (bool, optional): Configure logging for the MassDownloader. Default is `True`.</span>
+<span class="sd">        mseed_storage (str | callable, optional): Path template or function for storing miniSEED files. If `None`, uses default storage pattern via `get_mseed_storage()`.</span>
+<span class="sd">        stationxml_storage (str, optional): Path template for storing StationXML files. If `None`, defaults to `&lt;dataPath&gt;/inventory/{network}/{station}.xml`.</span>
+<span class="sd">        download_chunk_size_in_mb (int, optional): Size of download chunks in megabytes. Default is `20`.</span>
+<span class="sd">        threads_per_client (int, optional): Number of parallel download threads per client. Default is `3`.</span>
+<span class="sd">        print_report (bool, optional): Print download report upon completion. Default is `True`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        `None`</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - Creates output directories if they don&#39;t exist.</span>
+<span class="sd">        - Uses ObsPy&#39;s MassDownloader for parallel downloads from multiple providers.</span>
+<span class="sd">        - Supports rectangular, circular, and global domain selections.</span>
+<span class="sd">        - Automatically handles channel and location code prioritization.</span>
+<span class="sd">        - The `mseed_storage` can be either a string path template or a callable function that returns storage paths.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ```python</span>
+<span class="sd">                from sda.process import download_data</span>
+
+<span class="sd">                # Download data for a rectangular region</span>
+<span class="sd">                download_data(</span>
+<span class="sd">                    outputPath=&quot;/path/to/output&quot;,</span>
+<span class="sd">                    domainType=&quot;rectangular&quot;,</span>
+<span class="sd">                    latitudes=(40.0, 45.0),</span>
+<span class="sd">                    longitudes=(-120.0, -115.0),</span>
+<span class="sd">                    starttime=&quot;2023-01-01&quot;,</span>
+<span class="sd">                    endtime=&quot;2023-01-02&quot;,</span>
+<span class="sd">                    network=&quot;TA&quot;,</span>
+<span class="sd">                    channel=&quot;BHZ&quot;</span>
+<span class="sd">                )</span>
+
+<span class="sd">                # Download data for a circular region around a point</span>
+<span class="sd">                download_data(</span>
+<span class="sd">                    outputPath=&quot;/path/to/output&quot;,</span>
+<span class="sd">                    domainType=&quot;circular&quot;,</span>
+<span class="sd">                    latitude=35.0,</span>
+<span class="sd">                    longitude=-118.0,</span>
+<span class="sd">                    minradius=0,</span>
+<span class="sd">                    maxradius=100,</span>
+<span class="sd">                    starttime=&quot;2023-01-01&quot;,</span>
+<span class="sd">                    endtime=&quot;2023-01-02&quot;</span>
+<span class="sd">                )</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">add_log</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="o">*</span><span class="mi">50</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">)</span>
+    <span class="n">add_log</span><span class="p">(</span><span class="s2">&quot;Start process: download_data&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">outputPath</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">outputPath</span><span class="p">)</span>
+
+    <span class="c1"># Prepare files</span>
+    <span class="k">if</span> <span class="n">dataPath</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dataPath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputPath</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">)</span>
+
+
+    <span class="c1"># Define geographical domain</span>
+    <span class="k">if</span> <span class="n">domainType</span> <span class="o">==</span> <span class="s2">&quot;rectangular&quot;</span><span class="p">:</span>
+        <span class="n">domain</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">RectangularDomain</span><span class="p">(</span><span class="n">minlatitude</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">latitudes</span><span class="p">),</span> <span class="n">maxlatitude</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">latitudes</span><span class="p">),</span>
+                                       <span class="n">minlongitude</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">longitudes</span><span class="p">),</span> <span class="n">maxlongitude</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">longitudes</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">domainType</span> <span class="o">==</span> <span class="s2">&quot;circular&quot;</span><span class="p">:</span>
+        <span class="n">domain</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">CircularDomain</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="n">latitude</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="n">longitude</span><span class="p">,</span>
+                                    <span class="n">minradius</span><span class="o">=</span><span class="n">minradius</span><span class="p">,</span> <span class="n">maxradius</span><span class="o">=</span><span class="n">maxradius</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">domainType</span> <span class="o">==</span> <span class="s2">&quot;global&quot;</span><span class="p">:</span>
+        <span class="n">domain</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">GlobalDomain</span><span class="p">()</span>  
+
+    <span class="c1"># Restrictions</span>
+    <span class="n">starttime</span> <span class="o">=</span> <span class="n">UTCDateTime</span><span class="p">(</span><span class="n">starttime</span><span class="p">)</span>
+    <span class="n">endtime</span>   <span class="o">=</span> <span class="n">UTCDateTime</span><span class="p">(</span><span class="n">endtime</span><span class="p">)</span>
+    <span class="n">restrictions</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">Restrictions</span><span class="p">(</span>
+        <span class="n">starttime</span><span class="p">,</span> <span class="n">endtime</span><span class="p">,</span>
+        <span class="n">station_starttime</span><span class="p">,</span> <span class="n">station_endtime</span><span class="p">,</span>
+        <span class="n">chunklength_in_sec</span><span class="p">,</span>
+        <span class="n">network</span><span class="p">,</span> <span class="n">station</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span>
+        <span class="n">exclude_networks</span><span class="p">,</span> <span class="n">exclude_stations</span><span class="p">,</span>
+        <span class="n">limit_stations_to_inventory</span><span class="p">,</span>
+        <span class="n">reject_channels_with_gaps</span><span class="p">,</span> <span class="n">minimum_length</span><span class="p">,</span>
+        <span class="n">sanitize</span><span class="p">,</span> <span class="n">minimum_interstation_distance_in_m</span><span class="p">,</span>
+        <span class="n">channel_priorities</span><span class="p">,</span> <span class="n">location_priorities</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Massive Downloader object</span>
+    <span class="n">mdlObject</span> <span class="o">=</span> <span class="n">mdl</span><span class="o">.</span><span class="n">MassDownloader</span><span class="p">(</span><span class="n">providers</span><span class="p">,</span> <span class="n">debug</span><span class="p">,</span> <span class="n">configure_logging</span><span class="p">)</span>
+
+    <span class="c1"># Download data</span>
+    <span class="k">global</span> <span class="n">dataPathGlobalVariable</span> <span class="c1"># To be accessed by get_mseed_storage()</span>
+    <span class="n">dataPathGlobalVariable</span> <span class="o">=</span> <span class="n">dataPath</span>
+    <span class="k">if</span> <span class="n">mseed_storage</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mseed_storage</span> <span class="o">=</span> <span class="n">get_mseed_storage</span>
+    <span class="k">if</span> <span class="n">stationxml_storage</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">stationxml_storage</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataPath</span><span class="p">,</span> <span class="s2">&quot;inventory&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{network}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{station}</span><span class="s2">.xml&quot;</span><span class="p">)</span>
+
+    <span class="n">mdlObject</span><span class="o">.</span><span class="n">download</span><span class="p">(</span>
+        <span class="n">domain</span><span class="p">,</span> <span class="n">restrictions</span><span class="p">,</span>
+        <span class="n">mseed_storage</span><span class="p">,</span> <span class="n">stationxml_storage</span><span class="p">,</span>
+        <span class="n">download_chunk_size_in_mb</span><span class="p">,</span> <span class="n">threads_per_client</span><span class="p">,</span> <span class="n">print_report</span> 
+    <span class="p">)</span>
+
+    <span class="n">add_log</span><span class="p">(</span><span class="s2">&quot;End process: download_data&quot;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">)</span>
+    <span class="n">add_log</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="o">*</span><span class="mi">50</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;info&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../core/inversion/" class="md-footer__link md-footer__link--prev" aria-label="Previous: inversion">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                inversion
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../scan_data/" class="md-footer__link md-footer__link--next" aria-label="Next: scan_data">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                scan_data
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.path", "navigation.top", "navigation.footer", "toc.follow", "toc.integrate", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
