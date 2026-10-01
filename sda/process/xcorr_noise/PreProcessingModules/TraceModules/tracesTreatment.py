@@ -66,6 +66,7 @@ class TreatmentTrace():
         """
         if float(NewFrequence) == float(FrequenceTrace):
             return Trace # We don't apply resampling if the target 
+        
         if NewFrequence is not None:
             rateFreq = float(FrequenceTrace)/float(NewFrequence)
             if numpy.round(rateFreq, 3) == numpy.round(rateFreq, 0):#decimate does not work if rateFreq is not a multiple of {2,3,...,8}
@@ -79,21 +80,17 @@ class TreatmentTrace():
                             break#in order to choice the bigger divisor
                 Trace = self.__makeDecimate(Trace, int(FrequenceTrace), int(NewFrequence))
             else:
-                Trace = self.__makeInterpolationNumpy(Trace, FrequenceTrace, NewFrequence)
+                Trace = self.__makeInterpolationNumpy(Trace, FrequenceTrace, NewFrequence) 
+            
         return Trace
 
     def __makeDecimate(self, Trace, Frequence, NewFrequence):
         return scipy.signal.decimate(Trace, int(float(Frequence)/float(NewFrequence)))
 
     def __makeInterpolationNumpy(self, Trace, Frequence, NewFrequence):
-        VectorPeriodTrace = numpy.arange(0,len(Trace)/float(Frequence),1.0/float(Frequence))
-        newVectorPeriodTrace = numpy.arange(0,int(len(Trace)/Frequence),1.0/NewFrequence)
+        VectorPeriodTrace = numpy.arange(0, len(Trace)/float(Frequence), 1.0/float(Frequence))
+        newVectorPeriodTrace = numpy.arange(0, len(Trace)/float(Frequence), 1.0/float(NewFrequence))
         return numpy.interp(newVectorPeriodTrace,VectorPeriodTrace,Trace)
-    
-    def __makeInterpolationScipy(self, Trace, Frequence, NewFrequence):#Problem of memory leak, even with garbage collector gc: don't use now
-        VectorPeriodTrace = numpy.arange(0,len(Trace)/float(Frequence),1.0/float(Frequence))
-        newVectorPeriodTrace = numpy.arange(0,int(len(Trace)/Frequence),1.0/NewFrequence)
-        return scipy.interpolate.interp1d(VectorPeriodTrace,Trace)(newVectorPeriodTrace)
 
     def makeTreatmentTraceBeforeNewFrequence(self, Trace, Frequence, remove_response, response_dict, config):
         """
