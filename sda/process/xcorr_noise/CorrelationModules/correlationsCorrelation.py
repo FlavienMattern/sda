@@ -167,11 +167,12 @@ class CorrelationForSublen(Correlation):
         corr = numpy.zeros(2*self.Maxlag+1, dtype='float')
         N = self.NumberSubLen*len(trace01)/self.LenTraceTotal
         numberCorr = 0
+
         for i in range(int(N)):
-            ti = self.LenTrace*i * 1./self.NewFrequence
-            tf = self.LenTrace*(i+1) * 1./self.NewFrequence
+            
             t1 = trace01[self.LenTrace*i:self.LenTrace*(i+1)]
             t2 = trace02[self.LenTrace*i:self.LenTrace*(i+1)]
+
             if numpy.max(numpy.abs(t1)) >= 1e-20:
                 if numpy.max(numpy.abs(t2)) >= 1e-20:
                     xcorr = self.makeCorrWithMaxlagNormailzed(t1, t2)
@@ -179,6 +180,8 @@ class CorrelationForSublen(Correlation):
                     numberCorr += 1
                     # Save Sublen
                     if self.SaveSubLen:
+                        ti = self.LenTrace*i * 1./self.NewFrequence
+                        tf = self.LenTrace*(i+1) * 1./self.NewFrequence
                         folder = os.path.join(self.SaveDirectory[:-3], "CorrelationsSubLen", comp, f"{sta1}-{sta2}")
                         try:
                             os.makedirs(folder)
@@ -187,7 +190,7 @@ class CorrelationForSublen(Correlation):
                         filename = os.path.join(folder, f"{date}_{ti}-{tf}.npy")
                         with open(filename, 'wb') as f:
                             numpy.save(f, xcorr)
-                    
+
         return corr/float(numberCorr), float(numberCorr)/N
 
 if __name__ == '__main__':
