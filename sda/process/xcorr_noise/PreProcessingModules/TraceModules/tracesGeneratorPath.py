@@ -35,8 +35,7 @@ import obspy.core
 import numpy
 import scipy.fftpack
 import scipy.signal
-from datetime import datetime, timedelta
-from sda.process.xcorr_noise.PreProcessingModules.TraceModules import tracesExceptions, tracesUtil
+from sda.process.xcorr_noise.PreProcessingModules.TraceModules import tracesExceptions
 from sda.core.logs import add_log
 import traceback
 
@@ -65,6 +64,10 @@ class generatorDatePathFileDictOfTraces(object):
             self.ListOfDates = kwargs['param'].ListOfDates
             self.LenTrace = kwargs['config']["LenTrace"]
             self.NewFrequence = kwargs['config']["NewFrequence"]
+            self.WindowStart = obspy.core.UTCDateTime(ns=kwargs['config']["window_start_ns"], precision=9)
+            self.WindowEnd = obspy.core.UTCDateTime(ns=kwargs['config']["window_end_ns"], precision=9)
+            self.WindowKey = kwargs['config']["window_key"]
+            self.NumberOfSubTrace = kwargs['config']["numberOfSubTrace"]
             # self.ListOfDates = ["{}/{:03d}".format(cur_year,cur_day)]
             
         except AttributeError:
@@ -111,11 +114,24 @@ class generatorDateDictOfTracesOneComponent(generatorDatePathFileDictOfTraces):
         
     def __iter__(self):
         genDatePathFileDictOfTraces = generatorDatePathFileDictOfTraces.__iter__(self)
+        traces = {}
+        seen = {}
         for date, FilePickle in genDatePathFileDictOfTraces:
             with open(FilePickle, 'rb') as fileDictTraces:
                 DictOfTracesOneDay = pickle.load(fileDictTraces)
                 DictOfTracesOneDayOneCompo = self.__fromDictTraceStationToDictTracesStationOneCompo(DictOfTracesOneDay, self.ComponentStation)
-                yield (date, DictOfTracesOneDayOneCompo)
+                for station, infos in DictOfTracesOneDayOneCompo.items():
+                    traces.setdefault(station, [])
+                    seen.setdefault(station, set())
+                    for info in infos:
+                        if (obspy.core.UTCDateTime(info['endtime']).ns < self.WindowStart.ns
+                                or obspy.core.UTCDateTime(info['starttime']).ns >= self.WindowEnd.ns):
+                            continue
+                        key = (info['nameFile'], info['channel'], info['ntrace'])
+                        if key not in seen[station]:
+                            seen[station].add(key)
+                            traces[station].append(info)
+        yield (self.WindowKey, traces)
 
     def __fromDictTraceStationToDictTracesStationOneCompo(self, DictOfTraces, Component):
         DictTracesOneCompo = {}
@@ -167,7 +183,7 @@ class generatorPathSaveStationListFilesStationOneDay(generatorDateDictOfTracesOn
         for date, DictOfTracesOneDayOneCompo in genDateDictOfTracesOneComponent:
             for station in self.ListOfStations:
                 DirPathSave, FileSave = self.getNameDirAndFileSave(date, station)
-                if not os.path.isfile(DirPathSave + FileSave):
+                if not os.path.isfile(DirPathSave + FileSave) or not os.path.isfile(DirPathSave + FileSave + ".coverage.npy"):
                     if list(DictOfTracesOneDayOneCompo.keys()):
                         if station in DictOfTracesOneDayOneCompo:
                             ListFileStationCompoOneDayWithIndex = []
@@ -178,31 +194,7 @@ class generatorPathSaveStationListFilesStationOneDay(generatorDateDictOfTracesOn
                             yield (date, station, DirPathSave, FileSave, ListFileStationCompoOneDayWithIndex)
 
 
-class generatorOneDatePathSaveStationListFilesStationOneDay(generatorPathSaveStationListFilesStationOneDay):
-    """
-    **A generator**
-    
-    :Base class: :class:`generatorPathSaveStationListFilesStationOneDay`
-        Inherits all attributes of the base class.
-        
-    Filter the value of the generator :class:`generatorPathSaveStationListFilesStationOneDay`.
-    Yield the same value as the generator :class:`generatorPathSaveStationListFilesStationOneDay` excepted
-    yield **None** instead of the date if the date  will be identical at the next generation.
-    
-    See also the class :class:`traces.TraceModules.tracesUtil.LastNewValueGeneratorOfListIndex` in the module :mod:`doubletUtil` use
-    for filtering.
-    """
-        
-    def __iter__(self):
-        generatorOneDatePathSaveStationListFilesStationOneDay = generatorPathSaveStationListFilesStationOneDay.__iter__(self)
-        g = tracesUtil.LastNewValueGeneratorOfListIndex(generatorOneDatePathSaveStationListFilesStationOneDay, [0],'NoneValues')
-        for date, station, DirPathSave, FileSave, ListFileStationCompoOneDayWithIndex in g:
-            DirSave_split = DirPathSave.split(os.sep)
-            if DirSave_split[-1] == "": DirSave_split = DirSave_split[:-1]
-            date = DirSave_split[-2] + "/" + DirSave_split[-1]
-            yield (date, station, DirPathSave, FileSave, ListFileStationCompoOneDayWithIndex)
-
-class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationListFilesStationOneDay):
+class generatorArrayBeTreatFrequenceAndPathSave(generatorPathSaveStationListFilesStationOneDay):
     """
     **A generator**
     
@@ -213,7 +205,7 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
         * the frequency of the sampling
         * the path file to save the treatment
     
-    :Base class: :class:`generatorOneDatePathSaveStationListFilesStationOneDay`
+    :Base class: :class:`generatorPathSaveStationListFilesStationOneDay`
         Inherits all attibutes of the base class.
         
     :Attributes:
@@ -237,24 +229,33 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
     """
     
     def __iter__(self):
-        genDateDictOfTracesOneComponent = generatorOneDatePathSaveStationListFilesStationOneDay.__iter__(self)
+        genDateDictOfTracesOneComponent = generatorPathSaveStationListFilesStationOneDay.__iter__(self)
         for date, station, DirPathSave, FileSave, ListFileStationCompoOneDayWithIndex in genDateDictOfTracesOneComponent:
             self.station = station
             self.ListFileStationCompoOneDayWithIndex = ListFileStationCompoOneDayWithIndex
             self.BestCode = self.selectBestChannelCode()
 
             self.Frequency, IndexLongestTrace = self.giveFrequenceAndIndexFromTheLongestTrace(date)
-            if self.Frequency == 0: continue
-            self.DurationTraceSave = int(float(self.Frequency)*86400)
+            if self.Frequency == 0:
+                yield (date, numpy.array([]), 0, DirPathSave, FileSave, station,
+                       numpy.full(self.NumberOfSubTrace, numpy.nan) if self.files_ignore else numpy.zeros(self.NumberOfSubTrace))
+                continue
+            self.DurationTraceSave = int(round(float(self.Frequency) * (self.WindowEnd - self.WindowStart)))
             self.TraceToTreated = numpy.zeros(self.DurationTraceSave, dtype='float')
+            self.DataCoverage = numpy.zeros(self.DurationTraceSave, dtype='float32')
             self.StationFullName = ""
             try:
                 self.__StartDateTimeTrace = self.makeArrayToTreatAndGiveStartTime(date)
             except Exception:
+                yield (date, numpy.array([]), self.Frequency, DirPathSave, FileSave, station,
+                       numpy.full(self.NumberOfSubTrace, numpy.nan))
                 continue
             self.timeCorrectionTrace(station, date)
 
-            yield (date, self.TraceToTreated, self.Frequency, DirPathSave, FileSave, self.StationFullName)
+            edges = numpy.linspace(0, len(self.DataCoverage), self.NumberOfSubTrace + 1, dtype=int)
+            coverage = numpy.asarray([self.DataCoverage[a:b].mean() if b > a else 0.0
+                                      for a, b in zip(edges[:-1], edges[1:])])
+            yield (date, self.TraceToTreated, self.Frequency, DirPathSave, FileSave, self.StationFullName, coverage)
 
     def selectBestChannelCode(self):
         code_priority = ["HH","BH","MH","EH","LH","HL","BL","ML","EL","LL","SH","HN","BN","MN","EN","LN","SN"]
@@ -296,8 +297,8 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
         
     def giveFrequenceAndIndexFromTheLongestTrace(self, date):
         
-        starttime = datetime.strptime(date, "%Y/%j")
-        endtime = starttime + timedelta(seconds=int(self.LenTrace/self.NewFrequence))
+        starttime = self.WindowStart
+        endtime = self.WindowEnd
         
         FrequenceLongestTrace = 0.0
         BiggestLenTrace = 0.0
@@ -324,7 +325,7 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
                 # FrequenceTrace = float(numpy.round(float(subStream.stats['sampling_rate'])*1000)/1000)
                 # LenTrace = subStream.stats.npts
                 FrequenceTrace = float(numpy.round(float(subStream.stats.sampling_rate) * 1000) / 1000)
-                LenTrace = self.npts_in_window(subStream, obspy.core.UTCDateTime(starttime), obspy.core.UTCDateTime(endtime)               )
+                LenTrace = self.npts_in_window(subStream, starttime, endtime - 1.0 / FrequenceTrace)
 
                 if LenTrace>BiggestLenTrace:
                     BiggestLenTrace = LenTrace
@@ -336,8 +337,9 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
 
     def makeArrayToTreatAndGiveStartTime(self, date):
         LastFileOpened = ''
-        starttime = datetime.strptime(date, "%Y/%j")
-        endtime = starttime + timedelta(seconds=int(self.LenTrace/self.NewFrequence))
+        starttime = self.WindowStart
+        endtime = self.WindowEnd
+        StartDateTimeTrace = None
         for infile, indexTrace, channel in self.ListFileStationCompoOneDayWithIndex:
 
             if infile in self.files_ignore: continue
@@ -356,13 +358,14 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
                     LastFileOpened = infile
                 
                 
-                subStream = Stream[indexTrace]
-                subStream.trim(obspy.core.UTCDateTime(starttime), obspy.core.UTCDateTime(endtime))
+                subStream = Stream[indexTrace].copy()
+                subStream.trim(starttime, endtime - subStream.stats.delta)
+                if not subStream.stats.npts:
+                    continue
                 
                 StationTrace = str(subStream.stats['station'])
                 ComponentTrace = str(subStream.stats['channel'])
                 FrequenceTrace = float(numpy.round(float(subStream.stats['sampling_rate'])*1000)/1000)
-                PeriodTrace = 1.0/FrequenceTrace
                 StartDateTimeTrace = subStream.stats['starttime'].datetime #Convert in datetime object
                 Trace = subStream.__dict__['data']
                 self.StationFullName = "{}.{}.{}.{}".format(subStream.stats.network,
@@ -370,9 +373,21 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
                                                             subStream.stats.location,
                                                             subStream.stats.channel)
 
+                IndexBeginTrace = int(round((subStream.stats.starttime - starttime) * self.Frequency))
+                begin = max(0, IndexBeginTrace)
+                end = min(self.DurationTraceSave, IndexBeginTrace + len(Trace))
+                if end > begin:
+                    if FrequenceTrace == self.Frequency:
+                        self.DataCoverage[begin:end] = numpy.isfinite(Trace[begin - IndexBeginTrace:end - IndexBeginTrace])
+                    else:
+                        self.DataCoverage[begin:end] = numpy.nan
                 #If trace have problem (check with the function checkTraceInfo), we put it aside
                 if self.__checkTraceInfo(infile, Trace, indexTrace, StationTrace, ComponentTrace, FrequenceTrace):
-                    IndexBeginTrace = self.__giveIndexBeginTrace(PeriodTrace, StartDateTimeTrace)
+                    if IndexBeginTrace < 0:
+                        Trace = Trace[-IndexBeginTrace:]
+                        IndexBeginTrace = 0
+                    if IndexBeginTrace >= self.DurationTraceSave:
+                        continue
                     if IndexBeginTrace+len(Trace)>self.DurationTraceSave:
                         self.TraceToTreated[IndexBeginTrace:] = Trace[:self.DurationTraceSave-IndexBeginTrace]
                     else:
@@ -381,6 +396,8 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
         sys.stdout.flush()
         sys.stderr.flush()
 
+        if StartDateTimeTrace is None:
+            raise ValueError("No data overlap the requested interval.")
         return StartDateTimeTrace
     
     def __checkTraceInfo(self, Infile, Trace, IndexTrace, StationTrace, ComponentTrace, FrequenceTrace):
@@ -408,13 +425,6 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
         
         return True
     
-    def __giveIndexBeginTrace(self, Period, StartTime):
-        TimeSecBegin = 3600*StartTime.hour+60*StartTime.minute+StartTime.second+1.e-6*StartTime.microsecond
-        IndexBeginTrace = int(TimeSecBegin/float(Period))
-        if 2*(TimeSecBegin%Period) >=  Period:
-            IndexBeginTrace += 1
-        return  IndexBeginTrace
-
     def timeCorrectionTrace(self, station, date, ErrorStartTime=5.e-6):
         #Trace is destroyed
         #__StartDateTimeTrace is a datetime object

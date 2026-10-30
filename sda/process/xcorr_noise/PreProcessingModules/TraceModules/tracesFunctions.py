@@ -239,13 +239,12 @@ def MYmakeSubTreatment(Trace,numberOfSubTrace,Frequence,ratioE,ratioZero,periodM
     if acorr == True:
         TraceW = copy.deepcopy(Trace)
         TraceNoW = copy.deepcopy(Trace)
+    starttime = UTCDateTime(ns=config["window_start_ns"]).datetime
            
     if isinstance(config["restricted_times"], list):
         if len(config["restricted_times"]) > 0: 
             do_restricted_times = True
             # print("Preparing subtreatment...")
-            starttime = datetime.strptime(config["starttime"], "%Y-%m-%d")
-            endtime = datetime.strptime(config["endtime"], "%Y-%m-%d")
             # print("> starttime", starttime)
             # print("> endtime", endtime)
             restricted_times = [(UTCDateTime(t1).datetime, UTCDateTime(t2).datetime) for t1, t2 in config["restricted_times"]]
@@ -260,7 +259,10 @@ def MYmakeSubTreatment(Trace,numberOfSubTrace,Frequence,ratioE,ratioZero,periodM
     for i in range(numberOfSubTrace):
         windowStart = i     * SubLenTrace/Frequence/60 # Begin of the window (in min)
         windowEnd   = (i+1) * SubLenTrace/Frequence/60 # End of the window (in min)
-        currentHour = (windowStart + windowEnd) / 2
+        start_sub = starttime + timedelta(minutes=windowStart)
+        end_sub = starttime + timedelta(minutes=windowEnd)
+        middle = start_sub + (end_sub - start_sub) / 2
+        currentHour = middle.hour * 60 + middle.minute + middle.second / 60 + middle.microsecond / 60e6
         config["iteration"] = i
         
         

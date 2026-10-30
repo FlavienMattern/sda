@@ -33,6 +33,10 @@ class TreatmentTrace():
         Resample the trace, then apply the processing defined in tracesDefineTreatments.
         """
         Trace = self.makeNewFrequenceTrace(Trace, Frequence, self.NewFrequence)
+        # Interpolation can add one endpoint because of floating point arange.
+        Trace = Trace[:config["LenTrace"]]
+        if len(Trace) != config["LenTrace"]:
+            raise ValueError("Resampling did not produce the requested number of samples.")
 
         TraceW, TraceNoW = tracesDefineTreatments.makeTreatmentTraceAfterNewFrequence(Trace, self.NewFrequence, acorr, remove_response, response_dict, config)
 

@@ -45,7 +45,7 @@ class WriterCorrelation(object):
         Return a path directory dependent of the date and a file name dependent of the a couple of stations.  
         """
         DirSave = os.path.join(self.DirSaveCompo, f"{FirstStation}-{SecondStation}")
-        day_str = datetime.strptime(Date, "%Y/%j").strftime("%Y-%m-%d")
+        day_str = os.path.basename(Date) if Date.startswith("windows" + os.sep) else datetime.strptime(Date, "%Y/%j").strftime("%Y-%m-%d")
         FileSave = os.path.join(DirSave, f"{day_str}.mat")
         return DirSave, FileSave
 

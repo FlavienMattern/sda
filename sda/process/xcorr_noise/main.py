@@ -1,5 +1,7 @@
 # Global modules
 import os
+import pandas as pd
+from obspy import UTCDateTime
 
 # Local modules
 from sda.core.logs import add_log
@@ -47,7 +49,8 @@ def xcorr_noise(
     minSubCorrKeep = 0.8,
     maxInterDistance = None,
     savePreProcessing = False,
-    restricted_times = None
+    restricted_times = None,
+    save_mode = "stack"
 ):
     
     """
@@ -55,8 +58,8 @@ def xcorr_noise(
 
     Parameters:
         outputPath (str): Path to the directory where output files will be saved.
-        starttime (datetime or str): Start time for data selection and processing.
-        endtime (datetime or str): End time for data selection and processing.
+        starttime (datetime or str): UTC start, including an optional time of day.
+        endtime (datetime or str): Exclusive UTC end. A date-only string includes that entire day.
         databasePath (str, optional): Path to the database file. Defaults to None.
         DataPath (str, optional): Path to the waveform data. Defaults to None.
         Components (list of str, optional): List of components to process (e.g., ["Z"]). Defaults to ["Z"].
@@ -84,14 +87,15 @@ def xcorr_noise(
         divideFreq (float, optional): Percentage for frequency domain apodization (0 to 0.5). Defaults to 0.05.
         lengthBorder (int, optional): Length of border for apodization (not used). Defaults to 100.
         HourFilter (tuple, optional): Tuple specifying the hour range for filtering (start, end). Defaults to (0, 24).
-        SaveSubLen (bool, optional): Whether to save sub-trace lengths. Defaults to False.
+        SaveSubLen (bool, optional): Legacy export of retained sub-correlations to separate NumPy files. Defaults to False. Use save_mode to choose the HDF5 output.
         AutoCorr (bool, optional): Whether to compute autocorrelation (must be True). Defaults to True.
         Maxlag (int, optional): Maximum absolute lag time in seconds. Defaults to 120.
-        LenTrace (int, optional): Length of each trace in seconds. Defaults to 86400.
-        minSubCorrKeep (float, optional): Minimum sub-correlation coefficient to keep. Defaults to 0.8.
+        LenTrace (float, optional): Duration in seconds of consecutive, non-overlapping correlation intervals. Defaults to 86400. Incomplete final intervals are skipped.
+        minSubCorrKeep (float, optional): Minimum fraction of retained sub-windows required to save a stack. Defaults to 0.8. Subcorrelations mode saves every retained sub-correlation.
         maxInterDistance (float, optional): Maximum inter-station distance for correlation. Defaults to None.
         savePreProcessing (bool, optional): Whether to save preprocessed data. Defaults to False.
         restricted_times (list or None, optional): List of restricted time intervals. Defaults to None.
+        save_mode (str, optional): "stack" (default) or "subcorrelations". Both modes record retained counts and precise interval bounds in HDF5 metadata. SaveSubLen remains the separate legacy NumPy export option.
 
     Returns:
         None
@@ -182,9 +186,23 @@ def xcorr_noise(
         "minSubCorrKeep" : minSubCorrKeep,
         "maxInterDistance": maxInterDistance,
         "savePreProcessing": savePreProcessing,
-        "restricted_times": restricted_times
+        "restricted_times": restricted_times,
+        "save_mode": save_mode
     }
+    # Convert the requested UTC interval and durations; parameter validation is deferred.
+    start_ns = starttime.ns if isinstance(starttime, UTCDateTime) else pd.Timestamp(starttime).value
+    end_ns = endtime.ns if isinstance(endtime, UTCDateTime) else pd.Timestamp(endtime).value
+    if isinstance(endtime, str) and len(endtime) == 10:
+        end_ns += 86400 * 1_000_000_000
+    config["range_start_ns"] = start_ns
+    config["range_end_ns"] = end_ns
+    config["window_duration_ns"] = round(LenTrace * 1_000_000_000)
+    config["starttime"] = UTCDateTime(ns=(start_ns // 1_000_000_000) * 1_000_000_000).strftime("%Y-%m-%d")
+    config["endtime"] = UTCDateTime(ns=((end_ns - 1) // 1_000_000_000) * 1_000_000_000).strftime("%Y-%m-%d")
     config = conf.update(config)
+    config["LenTrace"] = round(config["LenTrace"])
+    config["Maxlag"] = round(config["Maxlag"])
+    config["GoodNumber"] = config["LenTrace"] // numberOfSubTrace + config["Maxlag"]
     add_log("Configuration parameters:", level="info")
     for key in config:
         add_log(f"  - {key} : {config[key]}", level="info")

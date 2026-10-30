@@ -49,6 +49,7 @@ class Correlation(object):
         self.SaveSubLen = config["SaveSubLen"]
         self.NewFrequence = config["NewFrequence"]
         self.SaveDirectory = config["SaveDirectory"]
+        self.save_mode = config.get("save_mode", "stack")
         
     def getMaxlag(self, config):
         try:
@@ -141,21 +142,28 @@ class CorrelationForSublen(Correlation):
         except (AttributeError, ValueError):
             raise correlationsExceptions.ErrorParamFromParamFile('GoodNumber')
         
-    def makeCorrelationSubLenStackWithNormalisationAndMaxlag(self, trace01, trace02, date, comp, sta1, sta2):
+    def makeCorrelationSubLenStackWithNormalisationAndMaxlag(self, trace01, trace02, date, comp, sta1, sta2, return_details=False):
         corr = numpy.zeros(2*self.Maxlag+1, dtype='float')
         N = self.NumberSubLen*len(trace01)/self.LenTraceTotal
         numberCorr = 0
+        retained = []
+        indices = []
 
         for i in range(int(N)):
             
             t1 = trace01[self.LenTrace*i:self.LenTrace*(i+1)]
             t2 = trace02[self.LenTrace*i:self.LenTrace*(i+1)]
+            if not (numpy.isfinite(t1).all() and numpy.isfinite(t2).all()):
+                continue
 
             if numpy.max(numpy.abs(t1)) >= 1e-20:
                 if numpy.max(numpy.abs(t2)) >= 1e-20:
                     xcorr = self.makeCorrWithMaxlagNormailzed(t1, t2)
                     corr += xcorr
                     numberCorr += 1
+                    indices.append(i)
+                    if self.save_mode == "subcorrelations":
+                        retained.append(xcorr)
                     # Save Sublen
                     if self.SaveSubLen:
                         ti = self.LenTrace*i * 1./self.NewFrequence
@@ -169,7 +177,12 @@ class CorrelationForSublen(Correlation):
                         with open(filename, 'wb') as f:
                             numpy.save(f, xcorr)
 
-        return corr/float(numberCorr), float(numberCorr)/N
+        stack = corr / numberCorr if numberCorr else numpy.full_like(corr, numpy.nan)
+        fraction = float(numberCorr) / N if N else 0.0
+        if return_details:
+            subcorrelations = numpy.asarray(retained).reshape(-1, len(corr))
+            return stack, fraction, numberCorr, subcorrelations, numpy.asarray(indices, dtype=int)
+        return stack, fraction
 
 if __name__ == '__main__':
     #c=Correlation()
