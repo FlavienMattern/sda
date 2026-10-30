@@ -15,7 +15,6 @@ import os
 from sda.process.xcorr_noise.CorrelationModules import correlationsUtil
 
 
-
 class TestValueParam(object):
     def isGoodFormatTrace(self, **kwargs):
         if kwargs['FormatTrace'] in ['npy','mat']:
@@ -32,17 +31,6 @@ class TestValueParam(object):
             return True
         else:
             return False
-    def isGoodNumberInlineArgs(self, **kwargs):
-        if kwargs['TypeListStations'] == 'oneList':
-            if kwargs['NumberArgs'] == kwargs['LenDictNumberInlineArgs']-2:
-                return True
-            else:
-                return False
-        if kwargs['TypeListStations'] == 'twoLists':
-            if kwargs['NumberArgs'] == kwargs['LenDictNumberInlineArgs']-1:
-                return True
-            else:
-                return False
     def isGoodLoadDirectory(self, **kwargs):
         if os.access(kwargs['LoadDirectory'], os.F_OK) and os.access(kwargs['LoadDirectory'], os.R_OK):
             return True

@@ -28,7 +28,6 @@ import sys, os, pickle
 from sda.process.xcorr_noise.CorrelationModules import correlationsUtil, correlationsExceptions, correlationsTestParam
 
 
-
 class Param(object):
     """
     
@@ -124,7 +123,7 @@ class Param(object):
         self.getFormatIO()
         ListOfDates = self.getListOfDates(config)
         self.LenListOfDates = len(ListOfDates)
-        ListOfStations =  sorted(self.getListOfStations(config))
+        ListOfStations = sorted(config["stations"])
         self.LenListOfStations = len(ListOfStations)
         self.__DictNumberInlineArgs = {
                                      'TypeListStations':'onelist',
@@ -139,7 +138,12 @@ class Param(object):
                                      'FirstIndexSublistStations':9,
                                      'SecondIndexSublistStations':10
                                      }
-        self.getParamInline(config)
+        self.__getTypeOfListStations(config)
+        self.__getLoadDirectory(config)
+        self.__getSaveDirectory(config)
+        self.__getComponents(config)
+        self.__getArgsSublistDate(config)
+        self.__getArgsSublistStations(config)
         self.ListOfDates = correlationsUtil.makeListOfSubListFromList(ListOfDates, self.NumberSubListOfDates)[self.IndexSublistDates]
         if self.TypeListStations ==  'oneList':
             self.ListOfStations = correlationsUtil.makeListOfSubListFromList(ListOfStations, self.NumberSubListOfStations)[self.IndexSublistStations]
@@ -184,22 +188,6 @@ class Param(object):
             raise correlationsExceptions.ErrorParamFromParamFile('ListOfDates')
         return sorted(ListOfDates)
 
-    def getListOfStations(self, config):
-        return config["stations"] 
-        # if  hasattr(correlationsParam, 'ListOfStations') and isinstance(correlationsParam.ListOfStations, list) and correlationsParam.ListOfStations:
-        #     return correlationsParam.ListOfStations
-        # else:
-        #     raise correlationsExceptions.ErrorParamFromParamFile('ListOfStations')
-
-    def getParamInline(self, config):
-        self.__getTypeOfListStations(config)
-        # self.__testNumberOfArgsInline(config)
-        self.__getLoadDirectory(config)
-        self.__getSaveDirectory(config)
-        self.__getComponents(config)
-        self.__getArgsSublistDate(config)
-        self.__getArgsSublistStations(config)
-    
     def __getTypeOfListStations(self, config):
         try:
             self.TypeListStations = config["TypeListStations"]
@@ -208,10 +196,6 @@ class Param(object):
         except IndexError:
             raise correlationsExceptions.ErrorNumberInlineArgument('EmptyInlineArgs', len(sys.argv[1:]))
     
-    def __testNumberOfArgsInline(self, config):
-        if not self.testParam.isGoodNumberInlineArgs(NumberArgs = len(sys.argv[1:]),\
-         TypeListStations = self.TypeListStations, LenDictNumberInlineArgs = len(list(self.__DictNumberInlineArgs.keys()))):
-            raise correlationsExceptions.ErrorNumberInlineArgument('NumberArgvOneListStation', len(sys.argv[1:]))
 
     def __getLoadDirectory(self, config):
         LoadDirectory = config['SaveDirectory']
@@ -370,8 +354,6 @@ class ParamWithLastDateCompute(Param):
         FileLastDateCompute = 'LastDateCompute_' + self.__getStringOfParameters()
         return FileLastDateCompute
 
-    def __getKeyDictLastDateCompute(self):
-        return 'LastDateCompute'
     
     def getIndexLastDateCompute(self):
         """
@@ -383,8 +365,8 @@ class ParamWithLastDateCompute(Param):
             try:
                 with open(self.DirLastDateCompute + self.FileLastDateCompute, 'r') as fileDictLastDate:
                     DictLastDateCompute = pickle.load(fileDictLastDate)
-                if DictLastDateCompute[self.__getKeyDictLastDateCompute()] is not None:
-                    IndexLastDateCompute = self.ListOfDates.index(DictLastDateCompute[self.__getKeyDictLastDateCompute()])
+                if DictLastDateCompute['LastDateCompute'] is not None:
+                    IndexLastDateCompute = self.ListOfDates.index(DictLastDateCompute['LastDateCompute'])
             except:
                 pass
         return IndexLastDateCompute
@@ -404,7 +386,7 @@ class ParamWithLastDateCompute(Param):
                     os.makedirs(self.DirLastDateCompute, 0o770)
                 except:
                     pass
-        DictLastDateCompute[self.__getKeyDictLastDateCompute()] = date
+        DictLastDateCompute['LastDateCompute'] = date
         # print(self.DirLastDateCompute)
         # print(self.DirLastDateCompute[1::])
         

@@ -11,7 +11,6 @@ Module tracesTestParam
 ======================
 """
 
-import os
 from sda.process.xcorr_noise.PreProcessingModules.TraceModules import tracesUtil
 
 class TestValueParam(object):
@@ -20,17 +19,6 @@ class TestValueParam(object):
     """
     def isGoodFormatSave(self, **kwargs):
         if kwargs['FormatTraceSave'] in ['mat','npy']:
-            return True
-        else:
-            return False
-    def isGoodLoadDirectory(self, **kwargs):
-        """
-        Check if a directory exist and can be read.
-        
-        Parameter: dict
-            A dictionary with a key 'LoadDirectory'.
-        """
-        if os.access(kwargs['LoadDirectory'], os.F_OK) and os.access(kwargs['LoadDirectory'], os.R_OK):
             return True
         else:
             return False

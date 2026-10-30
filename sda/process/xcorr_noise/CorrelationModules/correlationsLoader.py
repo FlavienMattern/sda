@@ -13,7 +13,6 @@ Module correlationsLoader
 .. inheritance-diagram::
          LoaderTrace
          LoaderOneTraceNpy
-         LoaderOneTraceMat
          :parts: 1
 
 """
@@ -21,8 +20,6 @@ Module correlationsLoader
 from sda.process.xcorr_noise.CorrelationModules import correlationsExceptions
 import numpy
 import os
-import scipy.io
-
 
 
 class LoaderTrace(object):
@@ -94,36 +91,6 @@ class LoaderOneTraceNpy(LoaderTrace):
         """
         return numpy.load(DirTrace + FileTrace)
     
-class LoaderOneTraceMat(LoaderTrace):
-    """
-    Class to load traces with matlab format.
-    
-    :Base class: :class:`LoaderTrace`
-        Inherits all attibutes of the base class.
-        
-    :Parameter:
-    
-        **param** : obj
-        
-            Object with attributes  *FormatTrace*, *LoadDirectory*.
-            
-    """
-    def loadOneTrace(self, DirTrace, FileTrace):
-        """
-        Load a trace with the file path given and the format matlab (.mat).
-        
-        :Parameters:
-        
-            **DirSave**: str
-                Directory name to load the trace.
-                
-            **FileSave**: str
-                File name of the trace loaded.
-        
-        .. Note:: 
-            Requirement: The field in the matlab structure for the array of the trace is **'trace'**.
-        """
-        return scipy.io.loadmat(DirTrace + FileTrace)['trace'][:,0]
 
 if __name__ == '__main__':
     pass      

@@ -12,7 +12,6 @@ Module tracesFunctions
 
 """
 import numpy
-import numpy as np
 import scipy.fftpack
 import scipy.signal
 import obspy.signal
@@ -21,48 +20,6 @@ import copy
 from datetime import datetime, timedelta
 from obspy import UTCDateTime
 
-
-
-def butter_bandpass(lowcut, highcut, fs, order=5):
-    return butter(order, [lowcut, highcut], fs=fs, btype='band')
-
-def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
-    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
-    y = lfilter(b, a, data)
-    return y
-
-def witheningCosEnergy(Trace, FreqMin, FreqMax, FreqSampling, dt):#ok at 10e-8 same as matlab blanc(Trace,FreqMin,FreqMax,FreqSampling,'cos',dt);
-    """
-    Return the trace whitened with an apodization in cosinus square and multiply by the root square of the energy.
-    
-    :Parameters:
-        **Trace**: numpy array
-            The trace to be whitened.
-        **FreqMin**, **FreqMax**: float
-            The frequency minimal and the frequency maximal which define the interval.
-        **FreqSampling**: float
-            The frequency of the sampling.
-        **dt**: float
-            The percentage of the length of the apodization of each border.
-    """
-    n1 = int(round(FreqMin*len(Trace)/FreqSampling+1))
-    n2 = int(round(FreqMax*len(Trace)/FreqSampling+1))
-    apod = numpy.ones(n2 - n1 + 1)
-    na1 = round(dt/FreqSampling*len(Trace))
-    #left border
-    border = numpy.arange(1,int(na1)+1)/na1/2*numpy.pi
-    border = numpy.square(numpy.sin(border))
-    apod[0:int(na1)] = border
-    #rigth border
-    border = numpy.arange(int(na1)+1,2*na1+1)/na1/2*numpy.pi
-    border = numpy.square(numpy.sin(border))
-    apod[-int(na1):]= border
-    spectre = scipy.fftpack.fft(Trace)
-    E = numpy.sqrt(numpy.sum(numpy.absolute(numpy.square(spectre[n1-1:n2]))))/(n2-n1+1)
-    spectre[n1-1:n2] = numpy.exp(1j*numpy.angle(spectre[n1-1:n2]))*apod*E
-    spectre[0:n1-1] = 0
-    spectre[n2:] = 0
-    return 2*scipy.fftpack.ifft(spectre).real
 
 def witheningCos(Trace, freqMin, freqMax, FreqSampling, DivideFreq):
     """
@@ -79,11 +36,15 @@ def witheningCos(Trace, freqMin, freqMax, FreqSampling, DivideFreq):
             The percentage of the length of the apodization of each border.
             
     """
-    IndexWhiteMin, IndexWhiteMax, LengthApodisation, BorderLeft, BorderRight, NoramisationWithening = \
-        preparewitheningCos(len(Trace), freqMin, freqMax, FreqSampling, DivideFreq)
-    return witheningCosPrepared(Trace, IndexWhiteMin, IndexWhiteMax, LengthApodisation, BorderLeft, BorderRight, NoramisationWithening)
+    LengthTrace = len(Trace)
+    dt = (freqMax - freqMin)*DivideFreq
+    IndexWhiteMin = int(round(freqMin*LengthTrace/FreqSampling+1))-1
+    IndexWhiteMax = int(round(freqMax*LengthTrace/FreqSampling+1))
+    LengthApodisation = round(dt/FreqSampling*LengthTrace)
+    BorderLeft = numpy.square(numpy.sin(numpy.arange(1,int(LengthApodisation)+1)/LengthApodisation/2*numpy.pi))
+    BorderRight = numpy.square(numpy.sin(numpy.arange(int(LengthApodisation)+1,2*LengthApodisation+1)/LengthApodisation/2*numpy.pi))
+    NormalisationWithening = numpy.sqrt(float(IndexWhiteMax-IndexWhiteMin-5*LengthApodisation/4)/LengthTrace/2)
 
-def witheningCosPrepared(Trace, IndexWhiteMin, IndexWhiteMax, LengthApodisation, BorderLeft, BorderRight, NormalisationWithening):
     TraceWitened =  numpy.zeros(len(Trace), dtype='complex')
     TraceWitened[IndexWhiteMin:IndexWhiteMax] = scipy.fftpack.fft(Trace)[IndexWhiteMin:IndexWhiteMax]
     TraceWitened[IndexWhiteMin:IndexWhiteMax] /= numpy.absolute(TraceWitened[IndexWhiteMin:IndexWhiteMax])*NormalisationWithening
@@ -92,89 +53,6 @@ def witheningCosPrepared(Trace, IndexWhiteMin, IndexWhiteMax, LengthApodisation,
     TRWI = ((scipy.fftpack.ifft(TraceWitened, overwrite_x=True)).real)
     return TRWI
 
-
-def preparewitheningCos(LengthTrace, freqMin, freqMax, FreqSampling, DivideFreq):
-    dt = (freqMax - freqMin)*DivideFreq
-    IndexWhiteMin = int(round(freqMin*LengthTrace/FreqSampling+1))-1
-    IndexWhiteMax = int(round(freqMax*LengthTrace/FreqSampling+1))
-    LengthApodisation = round(dt/FreqSampling*LengthTrace)
-    BorderLeft = numpy.square(numpy.sin(numpy.arange(1,int(LengthApodisation)+1)/LengthApodisation/2*numpy.pi))
-    BorderRight = numpy.square(numpy.sin(numpy.arange(int(LengthApodisation)+1,2*LengthApodisation+1)/LengthApodisation/2*numpy.pi))
-    NoramisationWithening = numpy.sqrt(float(IndexWhiteMax-IndexWhiteMin-5*LengthApodisation/4)/LengthTrace/2)
-    return IndexWhiteMin, IndexWhiteMax, LengthApodisation, BorderLeft, BorderRight, NoramisationWithening
-
-'''
-def MY_witheningCos(Trace, freqMin, freqMax, FreqSampling, DivideFreq):
-    """
-    Return the trace whitened with an apodization in cosinus square.
-    
-    :Parameters:
-        **Trace**: numpy array
-            The trace to be whitened.
-        **freqMin**, **freqMax**: float
-            The frequency minimal and the frequency maximal which define the interval.
-        **FreqSampling**: float
-            The frequency of the sampling.
-        **DivideFreq**: float
-            The percentage of the length of the apodization of each border.
-            
-    """
-    IndexWhiteMin, IndexWhiteMax, LengthApodisationR, LengthApodisationL, BorderLeft, BorderRight, NoramisationWithening = \
-        MY_preparewitheningCos(len(Trace), freqMin, freqMax, FreqSampling, DivideFreq)
-    return MY_witheningCosPrepared(Trace, IndexWhiteMin, IndexWhiteMax, LengthApodisationR, LengthApodisationL, BorderLeft, BorderRight, NoramisationWithening)
-
-def MY_witheningCosPrepared(Trace, IndexWhiteMin, IndexWhiteMax, LengthApodisationR, LengthApodisationL, BorderLeft, BorderRight, NormalisationWithening):
-    TraceWitened =  numpy.zeros(len(Trace), dtype='complex')
-    TraceWitened[IndexWhiteMin:IndexWhiteMax] = scipy.fftpack.fft(Trace)[IndexWhiteMin:IndexWhiteMax]
-    TraceWitened[IndexWhiteMin:IndexWhiteMax] /= numpy.absolute(TraceWitened[IndexWhiteMin:IndexWhiteMax])*NormalisationWithening
-    TraceWitened[IndexWhiteMin:IndexWhiteMin+int(LengthApodisationL)] *=  BorderLeft
-    TraceWitened[IndexWhiteMax-int(LengthApodisationR):IndexWhiteMax] *= BorderRight
-    return ((scipy.fftpack.ifft(TraceWitened, overwrite_x=True)).real)
-
-def MY_preparewitheningCos(LengthTrace, freqMin, freqMax, FreqSampling, DivideFreq):
-    dt = (freqMax - freqMin)/DivideFreq
-    IndexWhiteMin = int(round(freqMin*LengthTrace/FreqSampling+1))-1
-    IndexWhiteMax = int(round(freqMax*LengthTrace/FreqSampling+1))
-    LengthApodisationR = round(dt/FreqSampling*LengthTrace)*100.0
-    LengthApodisationL = round(dt/FreqSampling*LengthTrace)
-    BorderLeft = numpy.square(numpy.sin(numpy.arange(1,int(LengthApodisationL)+1)/LengthApodisationL/2*numpy.pi))
-    BorderRight = numpy.square(numpy.sin(numpy.arange(int(LengthApodisationR)+1,2*LengthApodisationR+1)/LengthApodisationR/2*numpy.pi))
-    NoramisationWithening = numpy.sqrt(float(IndexWhiteMax-IndexWhiteMin-5*LengthApodisationR/4)/LengthTrace/2)
-    return IndexWhiteMin, IndexWhiteMax, LengthApodisationR, LengthApodisationL, BorderLeft, BorderRight, NoramisationWithening
-'''
-
-def makeButterFromPeriods(PeriodMin, PeriodMax, FreqSamplingRate, OrderButter):
-    return scipy.signal.filter_design.iirfilter(OrderButter, numpy.array([1./float(PeriodMax), 1./float(PeriodMin)])*2/float(FreqSamplingRate))
-
-def makeFiltfiltAndButterFromPeriod(Trace, PeriodMin, PeriodMax, SamplingRate, OrderButter):
-    """
-    Return the trace filtered with zerophase.
-    
-    :Parameters:
-        **Trace**: numpy array
-            The trace to be filtered.
-        **PeriodMin**, **PeriodMax**: float
-            The period minimal and the period maximal which define the interval.
-        **SamplingRate**: float
-            The frequency of the sampling.
-        **OrderButter**: int
-            The order of the butterworth.
-            
-    """
-    b,a = makeButterFromPeriods(PeriodMin, PeriodMax, SamplingRate, OrderButter)
-    return scipy.signal.filtfilt(b, a, Trace)
-
-def makeFiltfilt(Trace, b, a):
-    return scipy.signal.filtfilt(b, a, Trace)
-
-def makeSign(Trace):
-    """
-    Return the array of the sign of the trace. Trace is destroyed. 
-    :Parameters:
-        **Trace**: numpy array
-            The trace from which get the sign.
-    """
-    return np.sign(Trace)
 
 def glitchCorrectionWithFactorStd(Trace, FactorTestStd, NumberOfStd = 1, FactorReplaceWithStd = 0):#Trace is destroyed
     """
@@ -214,24 +92,6 @@ def glitchCorrectionWithFactorStdWithConvergence(Trace, FactorTestStd, FactorRep
 
     return tr2
 
-def makeBorderZero(Trace, LengthBorderLeft, LengthBorderRigth=None):
-    """
-    Return the trace with the border replaced by zeros.
-    
-    :Parameters:
-        **Trace**: numpy array
-            The trace to be filtered.
-        **LengthBorderLeft**: int
-            The length of the left border which is setting to zero.
-        **LengthBorderRigth**: int (optional)
-            The length of the rigth border which is setting to zero. Default is LengthBorderLeft.
-            
-    """
-    if LengthBorderRigth is None:
-        LengthBorderRigth=LengthBorderLeft
-    Trace[0:LengthBorderLeft]=0
-    Trace[-LengthBorderRigth:]=0
-    return Trace
 
 def highPassFilter(data, freq, df, corners = 4, zerophase=True):
     import numpy as np
@@ -332,7 +192,7 @@ def MYsubTreatment(Trace,Frequence,STD,factorTestE,ratioZero,periodMin,periodMax
         
         # Onebit clipping
         if config["do1bit"] == "before_whiten":
-            Trace = makeSign(Trace) 
+            Trace = numpy.sign(Trace)
         
         ### Whitening
         TraceW = witheningCos(Trace, freqMin, freqMax, Frequence, divideFreq)
@@ -355,8 +215,8 @@ def MYsubTreatment(Trace,Frequence,STD,factorTestE,ratioZero,periodMin,periodMax
         
         # Onebit clipping
         if config["do1bit"] == "after_whiten":
-            TraceW = makeSign(TraceW) 
-            TraceNoW = makeSign(TraceNoW) 
+            TraceW = numpy.sign(TraceW)
+            TraceNoW = numpy.sign(TraceNoW)
         
         
         # Earthquake correction

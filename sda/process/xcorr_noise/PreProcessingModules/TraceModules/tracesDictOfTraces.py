@@ -29,7 +29,6 @@ import sys
 import os
 import glob
 import obspy.core
-import numpy
 import pickle
 import operator
 import sqlite3
@@ -186,19 +185,18 @@ class DictOfTraces():
                 Component = Channel[-1]
                 
                 for JulianDay, Year in days:                    
-                    if self.__isValidTrace(NameStation,  Year + os.sep + JulianDay):
-                        NumberOfTraces += 1
+                    NumberOfTraces += 1
                                 
-                        if Year not in DictOfTraces:
-                            DictOfTraces[Year] = {JulianDay:{NameStation:{Component:[DictInfosFile]}}}
-                        elif JulianDay not in DictOfTraces[Year]:
-                            DictOfTraces[Year][JulianDay] = {NameStation:{Component:[DictInfosFile]}}
-                        elif NameStation not in DictOfTraces[Year][JulianDay]:
-                            DictOfTraces[Year][JulianDay][NameStation] = {Component:[DictInfosFile]}
-                        elif Component not in DictOfTraces[Year][JulianDay][NameStation]:
-                            DictOfTraces[Year][JulianDay][NameStation][Component] = [DictInfosFile]
-                        else:
-                            DictOfTraces[Year][JulianDay][NameStation][Component].append(DictInfosFile)
+                    if Year not in DictOfTraces:
+                        DictOfTraces[Year] = {JulianDay:{NameStation:{Component:[DictInfosFile]}}}
+                    elif JulianDay not in DictOfTraces[Year]:
+                        DictOfTraces[Year][JulianDay] = {NameStation:{Component:[DictInfosFile]}}
+                    elif NameStation not in DictOfTraces[Year][JulianDay]:
+                        DictOfTraces[Year][JulianDay][NameStation] = {Component:[DictInfosFile]}
+                    elif Component not in DictOfTraces[Year][JulianDay][NameStation]:
+                        DictOfTraces[Year][JulianDay][NameStation][Component] = [DictInfosFile]
+                    else:
+                        DictOfTraces[Year][JulianDay][NameStation][Component].append(DictInfosFile)
                 
             except:
                 msg = "An error occurred while collecting/formatting the following row from the database. Skipping row.\n"
@@ -225,9 +223,8 @@ class DictOfTraces():
             # print('Save temporary file pickle DictOfTraces: ' + FilePickle)
             pickle.dump(DictOfTraces, fileDictTraces, -1)
             NumberOfTempPickleFileDictOfTraces += 1   
-            
-            
-        
+
+
         ################################################################################################
         # # Counting number of files
         # count = 0
@@ -297,59 +294,7 @@ class DictOfTraces():
         #     NumberOfTempPickleFileDictOfTraces += 1      
     ################################################################################################
 
-    def __isValidTrace(self, NameStation, Date):
-        ValidTrace = True
-        # Les lignes commentées en dessous permettent de totu inclure dans le scan des données
-        # if NameStation not in self.ListOfStations:
-        #     ValidTrace = False
-        # elif Date not in self.ListOfDates:
-        #     ValidTrace = False
-        return ValidTrace
-      
-    def giveJulianDayTraceFromDateTime(self, DateTime, FreqSamplingRate):
-        """
-        Return a string of 3 characters 'ccc' that correspond to the julian day, e.g. '024', of the second sampling
-        induced by the date and the frequency of the sampling.
-        
-        :Parameter:
-            
-            **DateTime**: datetime.datetime object or obspy.core.utcdatetime.UTCDateTime object
-                DateTime is a date. 
-                
-            **FreqSamplingRate**: float
-                The frequency sampling in Hz. FreqSamplingRate must be greater than 1.0.
-        
-        .. Note::
-        
-            For  UTCDateTime object, see:
-            http://docs.obspy.org/packages/autogen/obspy.core.utcdatetime.UTCDateTime.html
-        
-        :Example:
-          
-            >>> x=datetime.datetime(2007, 12, 6, 23, 59, 59, 995000)
-            >>> print giveJulianDayTraceFromDateTime(x, 90)
-            341
-            >>> x=datetime.datetime(2007, 12, 6, 23, 59, 59, 985000)
-            >>> print giveJulianDayTraceFromDateTime(x, 90)
-            340
-        
-        """
-        DeltaTimeOneSamplingRate = datetime.timedelta(microseconds=1e6/FreqSamplingRate)#We suppose frequence SamplingRate>1.0
-        try:
-            BeginTime = DateTime.datetime#We suppose that DateTime has attribute 'datetime' to be convert in datetime object
-        except:
-            BeginTime = DateTime
 
-        FreqSamplingRate = float(numpy.round(float(FreqSamplingRate*1000)/1000))
-        DateTimeTest = BeginTime + DeltaTimeOneSamplingRate
-        JulianDay = int((DateTimeTest-datetime.datetime(DateTimeTest.year, 1, 1)).days + 1)
-        if JulianDay <10:
-            JulianDay = '00' + str(JulianDay)
-        elif JulianDay <100:
-            JulianDay = '0' + str(JulianDay)
-        return str(JulianDay)
-    
-    
     def makeDictOfTraceOfOneDayFromTempFilesDictOfTraces(self):
         """
         For each date, built dictionaries of the form:
@@ -396,9 +341,7 @@ class DictOfTraces():
                         pickle.dump(DictOfTracesOneYearOneDay, fileDictTraces, -1)
                     add_log(f"Saving metdata for day {iday+1}/{len(self.ListOfDates)}: DictOfTracesOneDay_{year}_{day}", level="info")
 
-                        
 
-    
 if __name__ == '__main__':
     pass
     """

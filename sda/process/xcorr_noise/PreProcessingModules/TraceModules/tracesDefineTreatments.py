@@ -10,8 +10,8 @@ Define the treatment of the traces.
 Module tracesDefineTreatments
 =============================
 
-Specify a list of ordered processing for the traces for the functions 
-:func:`makeTreatmentTraceBeforeNewFrequence` and :func:`makeTreatmentTraceAfterNewFrequence`. 
+Specify the ordered processing after resampling in
+:func:`makeTreatmentTraceAfterNewFrequence`.
 Functions can be import from the module :mod:`traces.TraceModules.tracesFunctions` or others available 
 libraries as numpy, scipy, obspy, etc...
 
@@ -20,45 +20,6 @@ libraries as numpy, scipy, obspy, etc...
 from sda.process.xcorr_noise.PreProcessingModules.TraceModules import tracesFunctions
 import obspy
 from sda.core.logs import add_log
-
-
-
-def makeTreatmentTraceBeforeNewFrequence(Trace, Frequence, remove_response, response_dict, config):#Trace is destroyed
-    """
-    Specify a list of ordered processing for the traces **before** resampling. Functions can be import from the
-    module :mod:`traces.TraceModules.tracesFunctions` or others available libraries as numpy, scipy, obspy, etc...
-    
-    .. container:: 
-        
-        **Examples:**
-        
-            * Make treatment with a function :func:`foo` in the module :mod:`bar` with parameters p1, p2. Then add a code like this (verify the signature!):
-            
-                .. code-block:: python
-                
-                    p1 = aValue
-                    p2 = None
-                    Trace = bar.foo(Trace, p1, p2)
-            
-        
-            * Filter the trace between 1 second and 3 seconds with the function :func:`filtfilt` (`see here`_) of the `library scipy`_ . Define also a Butterworth of order 3. Write:
-            
-            
-                .. code-block:: python
-                    
-                    OrderButter = 3
-                    PeriodMin = 1
-                    PeriodMax = 3
-                    arrayForButter = numpy.array([1./float(PeriodMax), 1./float(PeriodMin)])*2/float(Frequence)
-                    b, a = scipy.signal.filter_design.iirfilter(OrderButter, arrayForButter)
-                    Trace = scipy.signal.filtfilt(b, a, Trace)
-
-
-    .. _library scipy: http://docs.scipy.org
-    .. _see here: http://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.filtfilt.html
-    """ 
-
-    return Trace
 
 
 def makeTreatmentTraceAfterNewFrequence(Trace, Frequence, acorr, remove_response, response_dict, config):#Trace is destroyed

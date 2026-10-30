@@ -123,45 +123,6 @@ class listDateIterator():
         else:
             return False
 
-class LastNewValueGenerator(object):
-    def __init__(self, generator):
-        self._generator = generator
-        
-    def __iter__(self):
-        fisrtElement = True
-        for element in self._generator:
-            if fisrtElement:
-                fisrtElement = False
-                previousElement = element
-            else:
-                if previousElement != element:
-                    yield (previousElement)
-                else:
-                    yield None
-                previousElement = element
-        yield element
-
-class LastNewValueGeneratorOfIndex(object):
-    def __init__(self, Generator, indexYield):
-        self.__generator = Generator
-        self.__indexYield = indexYield
-        
-    def __iter__(self):
-        fisrtElement = True
-        for ListElement in self.__generator:
-            ListElement = list(ListElement)
-            if fisrtElement:
-                fisrtElement = False
-                previousListElement = ListElement
-                
-            else:
-                if previousListElement[self.__indexYield] != ListElement[self.__indexYield]:
-                    yield (previousListElement)
-                else:
-                    previousListElement[self.__indexYield] = None
-                    yield (previousListElement)
-                previousListElement = ListElement
-        yield previousListElement
 
 class LastNewValueGeneratorOfListIndex(object):
     """

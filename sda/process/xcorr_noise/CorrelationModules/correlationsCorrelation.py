@@ -25,11 +25,10 @@ import os
 import scipy
 
 
-
 class Correlation(object):
     """
     Provide attributes for the parameters of a correlation
-    and a method :func:`makeCorrWithMaxlag` to compute the correlation.
+    and a method :func:`makeCorrWithMaxlagNormailzed` to compute the normalized correlation.
     
     :Attributes:
         
@@ -84,27 +83,6 @@ class Correlation(object):
         StringParam += 'GoodNumber: ' + str(self.GoodNumber) + '\n'
         StringParam += 'Maxlag: ' + str(self.Maxlag) + '\n'
         return StringParam
-
-    def makeCorrWithMaxlag(self, trace01, trace02):
-        """
-        Return the correlation of trace01 and trace02.
-        
-        :Parameters:
-            **trace01**, **trace02**: numpy array
-                the traces for the correlation:
-        
-        .. Note:: 
-            **Requirement**:
-            The trace **trace01** and **trace02** are supposed to have the **same length**.
-        """
-        tr2 = numpy.zeros(self.GoodNumber)
-        tr2[0:self.LenTrace] = trace01
-        tr2 = scipy.fftpack.fft(tr2,overwrite_x=True)
-        tr2.imag *= -1
-        tr1 = numpy.zeros(self.GoodNumber)
-        tr1[self.Maxlag:self.Maxlag+self.LenTrace]= trace02
-        tr2 *= scipy.fftpack.fft(tr1,overwrite_x=True)
-        return (scipy.fftpack.ifft(tr2,overwrite_x=True)[0:2*self.Maxlag+1].real)
 
 
     def makeCorrWithMaxlagNormailzed(self, trace01, trace02):

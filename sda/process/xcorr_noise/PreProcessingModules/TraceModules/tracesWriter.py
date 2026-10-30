@@ -13,14 +13,12 @@ Module tracesWriter
 .. inheritance-diagram::
          WriterTraces
          WriterOneTraceNpy
-         WriterOneTraceMat
         :parts: 1
 """
 
 import os
 from sda.process.xcorr_noise.PreProcessingModules.TraceModules import tracesExceptions
 import numpy
-import scipy.io
 
 class WriterTraces(object):
     """
@@ -81,9 +79,6 @@ class WriterTraces(object):
         """
         raise NotImplementedError#Abstract method
 
-    def printFileSave(self, DirSave, FileSave):
-        # print('[INFO] Save PreProcessing : ' + DirSave + FileSave)
-        pass
         
 class WriterOneTraceNpy(WriterTraces):
     """
@@ -114,54 +109,13 @@ class WriterOneTraceNpy(WriterTraces):
         self.tryMakeDirectories(DirSave)
         try:
             numpy.save(DirSave + FileSave, Trace)
-            self.printFileSave(DirSave, FileSave)
         except:
             try:
                 print(('try second time to save the trace in: ' + DirSave + FileSave))
                 numpy.save(DirSave + FileSave, Trace)
-                self.printFileSave(DirSave, FileSave)
             except:
                 print(('cannot save the trace:' + DirSave + FileSave))
     
-class WriterOneTraceMat(WriterTraces):
-    """
-    :Parameter:
-    
-        **param** : obj
-        
-            Object with attributes  *FormatTraceSave*, *SaveDirectory*, *ComponentStation*.
-    """
-    def writeOneTrace(self, DirSave, FileSave, Trace):
-        """
-        Save a trace with the file path given and the format matlab (.mat).
-        
-        :Parameters:
-            
-            **Trace**: numpy array
-                The trace to be saved.
-        
-            **DirSave**: str
-                Directory name to save the trace.
-                
-            **FileSave**: str
-                File name of the trace saved.
-        
-        (Try twice to save the trace for concurrency problems.)
-        
-        .. Note:: 
-            The field in the matlab structure for the array of the trace is **'trace'**.
-        """
-        self.tryMakeDirectories(DirSave)
-        try:
-            scipy.io.savemat(DirSave + FileSave, {'trace':Trace})
-            self.printFileSave(DirSave, FileSave)
-        except:
-            try:
-                print(('try second time to save the trace in: ' + DirSave + FileSave))
-                scipy.io.savemat(DirSave + FileSave, {'trace':Trace})
-            except:
-                print(('cannot save the trace:' + DirSave + FileSave))
-                self.printFileSave(DirSave, FileSave)
 
 if __name__ == '__main__':
     pass      

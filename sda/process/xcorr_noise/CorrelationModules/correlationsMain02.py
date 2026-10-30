@@ -26,7 +26,6 @@ from obspy import read_inventory
 import geopy.distance
 
 
-
 def save_xcorr( save_directory, sta1, sta2, day, comp, corr, max_lag, fs):
         
         global lock
@@ -67,12 +66,9 @@ def makeCorrFromDirectoryTraces(config):
     try:
         parameters = correlationsGetParam.ParamWithLastDateCompute(config)
         correlation = correlationsCorrelation.CorrelationForSublen(config)
-        writeCorr = correlationsWriter.WriterOneCorrelation(parameters)
+        writeCorr = correlationsWriter.WriterCorrelation(parameters)
 
-        if parameters.FormatTrace == 'mat':
-            loadTrace = correlationsLoader.LoaderOneTraceMat(parameters, acorr=False)
-        elif parameters.FormatTrace == 'npy':
-            loadTrace = correlationsLoader.LoaderOneTraceNpy(parameters, acorr=False)
+        loadTrace = correlationsLoader.LoaderOneTraceNpy(parameters, acorr=False)
     
     except correlationsExceptions.ExceptionCorrelations as msg:
         # print(msg)
@@ -187,11 +183,9 @@ def CorrelationParallel(day, config):
                 shutil.rmtree(foldername)
 
 
-
 def init_worker(l):
     global lock
     lock = l
-
 
 
 def Correlation(config):

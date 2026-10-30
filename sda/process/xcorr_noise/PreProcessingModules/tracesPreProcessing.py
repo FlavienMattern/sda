@@ -58,7 +58,6 @@ More precisely we use at the present time:
     '0.4.7'
 
 
-
 """
 import sys, os, time
 from sda.process.xcorr_noise.PreProcessingModules.TraceModules import tracesGetParam, tracesExceptions, tracesGeneratorPath, tracesWriter, tracesTreatment
@@ -68,7 +67,6 @@ from obspy import read_inventory
 import traceback
 
 
-
 def treatTracesFromDirectory(config):
     """
     See the general specification.
@@ -76,10 +74,7 @@ def treatTracesFromDirectory(config):
     try:
         parameters = tracesGetParam.Param(config)
         treatment = tracesTreatment.TreatmentTrace(param=parameters)
-        if parameters.FormatTraceSave == 'mat':
-            writeTrace = tracesWriter.WriterOneTraceMat(parameters)
-        elif parameters.FormatTraceSave == 'npy':
-            writeTrace = tracesWriter.WriterOneTraceNpy(parameters)
+        writeTrace = tracesWriter.WriterOneTraceNpy(parameters)
     except tracesExceptions.ExceptionTraces as msg:
         # print(msg)
         raise

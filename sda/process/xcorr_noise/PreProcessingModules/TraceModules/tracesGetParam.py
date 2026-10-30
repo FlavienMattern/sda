@@ -21,8 +21,6 @@ import os
 from sda.process.xcorr_noise.PreProcessingModules.TraceModules import tracesUtil, tracesExceptions, tracesTestParam
 
 
-
-
 class Param(object):
     """
     Get parameters in order to treat traces (see the attributes).
@@ -65,13 +63,13 @@ class Param(object):
         self.testParam = tracesTestParam.TestValueParam()
         self.getFormatSaveTrace()
         self.getListOfDates(config)
-        self.getListOfStations(config)
-        self.getLoadDirectory(config)
+        self.ListOfStations = sorted(config["stations"])
+        self.LoadDirectory = config["DataPath"]
         self.getSaveDirectory(config)
         self.getComponentStation(config)
-        self.NewFrequence = self.getNewFrequence(config)
+        self.NewFrequence = config["NewFrequence"]
         self.__getPathDictOfTrace()
-        self.__getHasToMakeDictsOfTraces(config) 
+        self.HasToMakeDictOfTraces = config["HasToMakeDictOfTraces"]
         
     def getFormatSaveTrace(self):
         try:
@@ -104,29 +102,6 @@ class Param(object):
             raise tracesExceptions.ErrorParamFromParamFile('ListOfDates')
         return sorted(self.ListOfDates)
 
-    def getListOfStations(self, config):
-        self.ListOfStations = sorted(config["stations"])
-        # if  hasattr(TraceModules.tracesParam, 'ListOfStations') and isinstance(TraceModules.tracesParam.ListOfStations, list) and TraceModules.tracesParam.ListOfStations:
-        #     self.ListOfStations = sorted(TraceModules.tracesParam.ListOfStations)
-        # else:
-        #     raise TraceModules.tracesExceptions.ErrorParamFromParamFile('ListOfStations')
-
-    def getNewFrequence(self, config):
-        return config["NewFrequence"]
-        # if  hasattr(TraceModules.tracesParam, 'NewFrequence') and (isinstance(TraceModules.tracesParam.NewFrequence, float) or  isinstance(TraceModules.tracesParam.NewFrequence, int)):
-        #     return float(TraceModules.tracesParam.NewFrequence)
-        # else:
-        #     raise TraceModules.tracesExceptions.ErrorParamFromParamFile('NewFrequence')
-
-    def getLoadDirectory(self, config):
-        self.LoadDirectory = config["DataPath"]
-        # try:
-        #     self.LoadDirectory = TraceModules.tracesParam.LoadDirectory
-        #     if not self.testParam.isGoodLoadDirectory(LoadDirectory = self.LoadDirectory):
-        #         raise TraceModules.tracesExceptions.ErrorParamFromParamFile('LoadDirectory')
-        # except (AttributeError, ValueError):
-        #     raise TraceModules.tracesExceptions.ErrorParamFromParamFile('LoadDirectory')
-    
     def getSaveDirectory(self, config): 
         try:
             # self.SaveDirectory = TraceModules.tracesParam.SaveDirectory
@@ -148,13 +123,6 @@ class Param(object):
     def __getPathDictOfTrace(self):
         self.PrefixNameFileDictsOfTraces = 'DictOfTracesOneDay_'
         self.PathDirDictsOfTraces = self.SaveDirectory + os.sep + 'DictsOfTraces' + os.sep
-
-    def __getHasToMakeDictsOfTraces(self, config):
-        self.HasToMakeDictOfTraces = config["HasToMakeDictOfTraces"]
-        # try:
-        #     self.HasToMakeDictOfTraces = TraceModules.tracesParam.HasToMakeDictOfTraces
-        # except (AttributeError, ValueError):
-        #     pass
 
     def getDirAndFileDictOfDoublet(self, day, year):
         """

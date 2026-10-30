@@ -41,7 +41,6 @@ from sda.core.logs import add_log
 import traceback
 
 
-
 class generatorDatePathFileDictOfTraces(object):
     """
     **A generator**
@@ -193,8 +192,6 @@ class generatorOneDatePathSaveStationListFilesStationOneDay(generatorPathSaveSta
     See also the class :class:`traces.TraceModules.tracesUtil.LastNewValueGeneratorOfListIndex` in the module :mod:`doubletUtil` use
     for filtering.
     """
-    def __init__(self, **kwargs):
-        generatorPathSaveStationListFilesStationOneDay.__init__(self, **kwargs)
         
     def __iter__(self):
         generatorOneDatePathSaveStationListFilesStationOneDay = generatorPathSaveStationListFilesStationOneDay.__iter__(self)
@@ -238,8 +235,6 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
             Number of points of the array to treat.
         
     """
-    def __init__(self, **kwargs):
-        generatorOneDatePathSaveStationListFilesStationOneDay.__init__(self, **kwargs)
     
     def __iter__(self):
         genDateDictOfTracesOneComponent = generatorOneDatePathSaveStationListFilesStationOneDay.__iter__(self)
@@ -338,7 +333,6 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorOneDatePathSaveStationL
 
         return FrequenceLongestTrace, IndexLongestTrace
 
-        
 
     def makeArrayToTreatAndGiveStartTime(self, date):
         LastFileOpened = ''

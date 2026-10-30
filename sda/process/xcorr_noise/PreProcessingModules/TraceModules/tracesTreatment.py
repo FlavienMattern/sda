@@ -14,14 +14,12 @@ Module tracesTreatment
 import sys
 import numpy
 import scipy.signal
-import scipy.interpolate
 from sda.process.xcorr_noise.PreProcessingModules.TraceModules import tracesDefineTreatments
 
 
 class TreatmentTrace():
     """
-    Provide general methods in order to control the workflow: methods to treat the
-    traces before and after resampling and the resampling itself. 
+    Resample traces and apply the preprocessing workflow.
     
     .. Note::
     
@@ -32,20 +30,11 @@ class TreatmentTrace():
     
     def makeTreatment(self, Trace, Frequence, acorr, remove_response, response_dict, config):
         """
-        Return the trace treated with the following processing:
-        
-            1. Treat trace before resampling with the method :func:`makeTreatmentTraceBeforeNewFrequence`.
-            
-            2. Resampling with the method 'makeNewFrequenceTrace'.
-            
-            3. Treat trace after resampling with the method :func:`makeTreatmentTraceAfterNewFrequence`.
-            
+        Resample the trace, then apply the processing defined in tracesDefineTreatments.
         """
-        Trace = self.makeTreatmentTraceBeforeNewFrequence(Trace, Frequence, remove_response, response_dict, config)
-        
         Trace = self.makeNewFrequenceTrace(Trace, Frequence, self.NewFrequence)
 
-        TraceW, TraceNoW = self.makeTreatmentTraceAfterNewFrequence(Trace, self.NewFrequence, acorr, remove_response, response_dict, config)
+        TraceW, TraceNoW = tracesDefineTreatments.makeTreatmentTraceAfterNewFrequence(Trace, self.NewFrequence, acorr, remove_response, response_dict, config)
 
         sys.stdout.flush()
         sys.stderr.flush()
@@ -91,20 +80,5 @@ class TreatmentTrace():
         VectorPeriodTrace = numpy.arange(0, len(Trace)/float(Frequence), 1.0/float(Frequence))
         newVectorPeriodTrace = numpy.arange(0, len(Trace)/float(Frequence), 1.0/float(NewFrequence))
         return numpy.interp(newVectorPeriodTrace,VectorPeriodTrace,Trace)
-
-    def makeTreatmentTraceBeforeNewFrequence(self, Trace, Frequence, remove_response, response_dict, config):
-        """
-        Return the trace treated with the function :func:`traces.TraceModules.tracesDefineTreatments.makeTreatmentTraceBeforeNewFrequence`
-        in the module :mod:`traces.TraceModules.tracesDefineTreatments` **before** the resampling.
-        """
-        return tracesDefineTreatments.makeTreatmentTraceBeforeNewFrequence(Trace, Frequence, remove_response, response_dict, config)
-        
-    def makeTreatmentTraceAfterNewFrequence(self, Trace, Frequence, acorr, remove_response, response_dict, config):
-        """
-        Return the trace treated with the function :func:`traces.TraceModules.tracesDefineTreatments.makeTreatmentTraceAfterNewFrequence`
-        in the module :mod:`traces.TraceModules.tracesDefineTreatments` **after** the resampling.
-        """
-        TraceW, TraceNoW = tracesDefineTreatments.makeTreatmentTraceAfterNewFrequence(Trace, Frequence, acorr, remove_response, response_dict, config)
-        return TraceW, TraceNoW
 
 
