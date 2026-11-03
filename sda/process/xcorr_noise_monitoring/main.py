@@ -5,7 +5,7 @@ import numpy as np
 from obspy import read_inventory, UTCDateTime
 import geopy.distance
 from datetime import datetime
-from multiprocessing import Pool
+from loky.backend import get_context
 from functools import partial
 import h5py
 
@@ -13,7 +13,7 @@ import h5py
 from sda.process.xcorr_noise_monitoring.MonitoringMethods import stretching, mwcs
 from sda.core.stations_define import MakeCouplesOfStation
 from sda.core.rotationRTZ import rotationRTZ
-from sda.core.logs import add_log
+from sda.core.logs import add_log, get_worker_logging_config, init_worker_logging
 from sda.core.xcorr_noise import load_h5_corr
 from sda.core.xcorr_noise_monitoring import save_dvv_results
 
@@ -255,7 +255,8 @@ def MonitoringPoolHandler(pairs, config, inventory):
     # We set config dict as a non iterable argument for parallel processing
     MonitoringParallelWithConfig = partial(MonitoringParallel, config=config, inventory=inventory)
     # Create Pool with a progress bar
-    with Pool(processes=config["NumberOfProcesses"]) as p:
+    with get_context("loky").Pool(processes=config["NumberOfProcesses"], initializer=init_worker_logging,
+              initargs=get_worker_logging_config()) as p:
         with tqdm(total=len(pairs), bar_format="{l_bar}{bar:30}{r_bar}") as pbar:
             pbar.set_description(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " Monitoring      ")
             for _ in p.imap_unordered(MonitoringParallelWithConfig, pairs):

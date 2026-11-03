@@ -1,6 +1,6 @@
 import logging
 import logging.handlers
-import multiprocessing as mp
+from loky.backend import get_context
 import os
 import sys
 from datetime import datetime
@@ -29,7 +29,7 @@ def _listener_configurer(log_dir, log_name):
     else:
         log_file = os.path.join(log_dir, log_name)
 
-    msg = """
+    msg = r"""
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                       
     ┃    _____ ____  _____    __    _____ _____ _____    ┃
     ┃   |   __|    \|  _  |  |  |  |     |   __|   __|   ┃
@@ -67,11 +67,25 @@ def _listener_process_main(queue, log_dir, log_name):
 
 
 def _worker_configurer():
-    #Queue handler
-    h = logging.handlers.QueueHandler(_log_queue)
+    # Queue handler
     root = logging.getLogger()
-    root.addHandler(h)
+    if not any(isinstance(h, logging.handlers.QueueHandler) and h.queue is _log_queue
+               for h in root.handlers):
+        root.addHandler(logging.handlers.QueueHandler(_log_queue))
     root.setLevel(_log_level)
+
+
+def get_worker_logging_config():
+    return (_log_queue if _log_initialized else None, _log_level)
+
+
+def init_worker_logging(queue, level):
+    global _log_queue, _log_level, _log_initialized
+    if queue is None:
+        return
+    _log_queue, _log_level = queue, level
+    _worker_configurer()
+    _log_initialized = True
 
 
 def start_logging(log_dir=None, log_name=None, level="INFO"):
@@ -100,8 +114,9 @@ def start_logging(log_dir=None, log_name=None, level="INFO"):
         raise ValueError(f"Wrong logging level: {level}")
     _log_level = getattr(logging, level)
 
-    _log_queue = mp.Queue()
-    _listener_process = mp.Process(
+    context = get_context("loky")
+    _log_queue = context.Queue()
+    _listener_process = context.Process(
         target=_listener_process_main, args=(_log_queue, log_dir, log_name), daemon=True
     )
     _listener_process.start()
@@ -110,7 +125,8 @@ def start_logging(log_dir=None, log_name=None, level="INFO"):
     _worker_configurer()
 
     _log_initialized = True
-    add_log(f"File executed: {os.path.abspath(__main__.__file__)}", level="info")
+    main_script = getattr(__main__, "__file__", None)
+    add_log(f"File executed: {os.path.abspath(main_script)}" if main_script else "Interactive session.", level="info")
 
 
 def stop_logging():

@@ -12,13 +12,13 @@ from sda.process.xcorr_noise.CorrelationModules import correlationsExceptions, c
 from sda.core.date_utils import get_day
 from sda.core.stations_define import ReadListOfStation
 import sda.process.xcorr_noise.PreProcessingModules.tracesPreProcessing as PreProcessing
-from sda.core.logs import add_log
+from sda.core.logs import add_log, get_worker_logging_config, init_worker_logging
 import traceback
 import h5py
 import time
 import shutil
 from datetime import datetime
-from multiprocessing import Pool, Lock
+from loky.backend import get_context
 from functools import partial
 from tqdm import tqdm
 import numpy as np
@@ -193,9 +193,10 @@ def CorrelationParallel(interval, config):
                 shutil.rmtree(foldername)
 
 
-def init_worker(l):
+def init_worker(l, log_queue=None, log_level=None):
     global lock
     lock = l
+    init_worker_logging(log_queue, log_level)
 
 
 def Correlation(config):
@@ -211,9 +212,11 @@ def Correlation(config):
     intervals = ((starttime + i * duration, starttime + (i + 1) * duration) for i in range(number_intervals))
 
     # Run in multiprocessing
-    lock = Lock() # to prevent simultaneous access to saved files
+    context = get_context("loky")
+    lock = context.Lock() # to prevent simultaneous access to saved files
     CorrelationParallelWithConfig = partial(CorrelationParallel, config=config)
-    with Pool(processes=config["NumberOfProcesses"], initializer=init_worker, initargs=(lock,)) as p:
+    with context.Pool(processes=config["NumberOfProcesses"], initializer=init_worker,
+              initargs=(lock, *get_worker_logging_config())) as p:
         with tqdm(total=number_intervals, bar_format="{l_bar}{bar:30}{r_bar}") as pbar:
             pbar.set_description(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " Correlations    ")
             for _ in p.imap_unordered(CorrelationParallelWithConfig, intervals):

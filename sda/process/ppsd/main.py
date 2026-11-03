@@ -4,7 +4,7 @@ import pandas as pd
 from obspy import read_inventory, read
 from obspy.signal import PPSD
 from tqdm import tqdm
-import multiprocessing
+from loky.backend import get_context
 from functools import partial
 import sqlite3
 import warnings
@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 
 # Local modules
 import sda.core.database as database
-from sda.core.logs import add_log
+from sda.core.logs import add_log, get_worker_logging_config, init_worker_logging
 
 
 
@@ -117,7 +117,8 @@ def PPSDPoolHandler(stations, parameters):
     # We set config dict as a non iterable argument for parallel processing
     PPSDParallelWithConfig = partial(process_ppsd_station, parameters=parameters)
     # Create Pool with a progress bar
-    p = multiprocessing.Pool(processes=parameters["n_cores"])
+    p = get_context("loky").Pool(processes=parameters["n_cores"], initializer=init_worker_logging,
+                             initargs=get_worker_logging_config())
     with tqdm(total=len(stations), bar_format="{l_bar}{bar:30}{r_bar}") as pbar:
         pbar.set_description("Computing PPSDs")
         for _ in p.imap_unordered(PPSDParallelWithConfig, stations):

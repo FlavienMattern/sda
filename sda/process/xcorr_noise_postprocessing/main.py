@@ -8,11 +8,11 @@ from tqdm import tqdm
 import pandas as pd
 from obspy import UTCDateTime
 
-from multiprocessing import Pool
+from loky.backend import get_context
 from functools import partial
 from sda.core.stations_define import MakeCouplesOfStation
 from sda.process.xcorr_noise_postprocessing.functions import Stack, CorrFilter
-from sda.core.logs import add_log
+from sda.core.logs import add_log, get_worker_logging_config, init_worker_logging
 from sda.core.xcorr_noise import load_h5_corr
 import traceback
 
@@ -93,7 +93,8 @@ def xcorr_noise_postprocessing(
 
     # Run in multiprocessing
     PostProcessingParallelWithConfig = partial(PostProcessingPair, config=config)
-    with Pool(processes=config["NumberOfProcesses"]) as p:
+    with get_context("loky").Pool(processes=config["NumberOfProcesses"], initializer=init_worker_logging,
+              initargs=get_worker_logging_config()) as p:
         with tqdm(total=len(pairs), bar_format="{l_bar}{bar:30}{r_bar}") as pbar:
             pbar.set_description(datetime.now().strftime("[%Y-%m-%d %H:%M:%S]") + " PostProcessing  ")
             for _ in p.imap_unordered(PostProcessingParallelWithConfig, pairs):
