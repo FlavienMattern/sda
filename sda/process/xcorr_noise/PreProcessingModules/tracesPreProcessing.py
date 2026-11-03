@@ -65,7 +65,6 @@ from sda.core.logs import add_log
 from datetime import datetime, timedelta
 from obspy import read_inventory, UTCDateTime
 import traceback
-import numpy as np
 
 
 def treatTracesFromDirectory(config):
@@ -84,11 +83,6 @@ def treatTracesFromDirectory(config):
         sys.stdout.flush()
     
     generatorTrace = tracesGeneratorPath.generatorArrayBeTreatFrequenceAndPathSave(param=parameters, writer=writeTrace, config=config)
-    # Missing stations still get input-coverage metadata for this interval.
-    for station in parameters.ListOfStations:
-        directory, filename = writeTrace.getNameDirAndFileSave(config["window_key"], station)
-        if not os.path.isfile(directory + filename) and not os.path.isfile(directory + filename + ".coverage.npy"):
-            writeTrace.writeOneTrace(directory, filename + ".coverage.npy", np.zeros(config["numberOfSubTrace"]))
 
     BeginTimeTotal = time.time()
     BeginTimeDate = time.time()
@@ -111,9 +105,7 @@ def treatTracesFromDirectory(config):
                     except NameError:
                         inventory = inv
 
-    for date, Trace, Frequence, DirPathSave, FileSave, StationFullName, coverage in generatorTrace:
-        # Record readable input coverage even if subsequent preprocessing fails.
-        writeTrace.writeOneTrace(DirPathSave, FileSave + ".coverage.npy", coverage)
+    for date, Trace, Frequence, DirPathSave, FileSave, StationFullName in generatorTrace:
        
         if len(Trace) == 0:
             add_log(f"Trace for station {StationFullName} and day {date} is empty. Skipping trace.", level="warning")

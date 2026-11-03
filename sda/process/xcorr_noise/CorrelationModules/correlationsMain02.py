@@ -26,8 +26,8 @@ from obspy import read_inventory, UTCDateTime
 import geopy.distance
 
 
-def save_xcorr(save_directory, sta1, sta2, day, comp, corr, max_lag, fs,
-               config, n_retained, indices, data_coverage):
+def save_xcorr(save_directory, sta1, sta2, comp, corr, max_lag, fs,
+               config, n_retained, indices):
         global lock
         foldername = os.path.join(save_directory, comp)
         filename = os.path.join(foldername, f"{sta1}-{sta2}.h5")
@@ -37,30 +37,27 @@ def save_xcorr(save_directory, sta1, sta2, day, comp, corr, max_lag, fs,
             with lock:
                 with h5py.File(filename, 'a') as f:
                     if "metadata" not in f:
-                        meta_grp = f.create_group("metadata")
-                        meta_grp.create_dataset('fs', data=fs)
-                        meta_grp.create_dataset('max_lag', data=max_lag)
-                    meta_grp = f["metadata"]
-                    if "correlations" not in f:
-                        f.create_group("correlations")
-                    if day in f["correlations"]:
-                        del f["correlations"][day]
-                    if corr is not None and corr.size:
-                        f["correlations"].create_dataset(day, data=corr, compression="gzip", dtype="float32")
-
-                    windows = meta_grp.require_group("windows")
-                    if day in windows:
-                        del windows[day]
-                    record = windows.create_group(day)
-                    record.attrs.update(start_ns=config["window_start_ns"], end_ns=config["window_end_ns"],
-                                        n_retained=n_retained, n_total=config["numberOfSubTrace"],
-                                        save_mode=config["save_mode"])
-                    retained = np.zeros(config["numberOfSubTrace"], dtype=bool)
-                    retained[indices] = True
-                    record.create_dataset("retained", data=retained)
-                    record.create_dataset("data_coverage", data=data_coverage)
+                        f.create_group("metadata").attrs.update(
+                            fs=fs, max_lag=max_lag, save_mode=config["save_mode"],
+                            n_subwindows=config["numberOfSubTrace"])
+                    correlations = f.require_group("correlations")
+                    key = str(config["window_start_ns"])
+                    if key in correlations:
+                        del correlations[key]
+                    record = correlations.create_group(key)
+                    record.attrs["n_retained"] = n_retained
+                    if corr is None:
+                        n_lags = 2 * round(max_lag * fs) + 1
+                        corr = np.empty((0, n_lags)) if config["save_mode"] == "full" else np.full(n_lags, np.nan)
+                    record.create_dataset("data", data=corr, compression="gzip", dtype="float32")
+                    if config["save_mode"] == "full":
+                        start = config["window_start_ns"]
+                        duration = config["window_end_ns"] - start
+                        total = config["numberOfSubTrace"]
+                        times = np.asarray([start + (int(i) * duration + total // 2) // total for i in indices], dtype="int64")
+                        record.create_dataset("times", data=times)
         except:
-            msg = f"Cannot save correlation {sta1}-{sta2} ({comp}) for interval {day}.\n"
+            msg = f"Cannot save correlation {sta1}-{sta2} ({comp}) for interval {config['window_start_ns']}.\n"
             msg += traceback.format_exc()
             add_log(msg, level="error")
 
@@ -114,31 +111,25 @@ def makeCorrFromDirectoryTraces(config):
                 continue
 
         traces = []
-        coverage = []
         for component, station in zip(comp, (sta1, sta2)):
             directory, filename = loadTrace.getDirAndFileLoadTrace(component, date, station, sta1 == sta2)
             try:
                 traces.append(loadTrace.loadOneTrace(directory, filename))
             except Exception:
                 traces.append(None)
-            coverage_file = os.path.join(config['SaveDirectory'], component + "_TRACE", date, station + ".npy.coverage.npy")
-            try:
-                coverage.append(np.load(coverage_file))
-            except Exception:
-                coverage.append(np.full(config['numberOfSubTrace'], np.nan))
 
         n_retained = 0
         indices = np.array([], dtype=int)
         corr = None
         if all(trace is not None for trace in traces):
             corr, perc, n_retained, subcorrelations, indices = correlation.makeCorrelationSubLenStackWithNormalisationAndMaxlag(
-                traces[0], traces[1], date_str, comp, sta1, sta2, return_details=True)
-            if config['save_mode'] == 'subcorrelations':
+                traces[0], traces[1], date_str, comp, sta1, sta2)
+            if config['save_mode'] == 'full':
                 corr = subcorrelations
             elif not n_retained or perc < config['minSubCorrKeep']:
                 corr = None
-        save_xcorr(save_directory, sta1, sta2, date_str, comp, corr, max_lag, fs,
-                   config, n_retained, indices, np.column_stack(coverage))
+        save_xcorr(save_directory, sta1, sta2, comp, corr, max_lag, fs,
+                   config, n_retained, indices)
 
 
 def CorrelationParallel(interval, config):

@@ -91,11 +91,11 @@ def xcorr_noise(
         AutoCorr (bool, optional): Whether to compute autocorrelation (must be True). Defaults to True.
         Maxlag (int, optional): Maximum absolute lag time in seconds. Defaults to 120.
         LenTrace (float, optional): Duration in seconds of consecutive, non-overlapping correlation intervals. Defaults to 86400. Incomplete final intervals are skipped.
-        minSubCorrKeep (float, optional): Minimum fraction of retained sub-windows required to save a stack. Defaults to 0.8. Subcorrelations mode saves every retained sub-correlation.
+        minSubCorrKeep (float, optional): Minimum fraction of retained sub-windows required to save a stack. Defaults to 0.8. Full mode saves every retained sub-correlation.
         maxInterDistance (float, optional): Maximum inter-station distance for correlation. Defaults to None.
         savePreProcessing (bool, optional): Whether to save preprocessed data. Defaults to False.
         restricted_times (list or None, optional): List of restricted time intervals. Defaults to None.
-        save_mode (str, optional): "stack" (default) or "subcorrelations". Both modes record retained counts and precise interval bounds in HDF5 metadata. SaveSubLen remains the separate legacy NumPy export option.
+        save_mode (str, optional): "stack" (default) saves a stack over LenTrace; "full" saves every retained sub-correlation. Both modes record retained counts. SaveSubLen remains the separate legacy NumPy export option.
 
     Returns:
         None

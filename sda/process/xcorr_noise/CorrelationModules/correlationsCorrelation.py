@@ -142,7 +142,7 @@ class CorrelationForSublen(Correlation):
         except (AttributeError, ValueError):
             raise correlationsExceptions.ErrorParamFromParamFile('GoodNumber')
         
-    def makeCorrelationSubLenStackWithNormalisationAndMaxlag(self, trace01, trace02, date, comp, sta1, sta2, return_details=False):
+    def makeCorrelationSubLenStackWithNormalisationAndMaxlag(self, trace01, trace02, date, comp, sta1, sta2):
         corr = numpy.zeros(2*self.Maxlag+1, dtype='float')
         N = self.NumberSubLen*len(trace01)/self.LenTraceTotal
         numberCorr = 0
@@ -162,7 +162,7 @@ class CorrelationForSublen(Correlation):
                     corr += xcorr
                     numberCorr += 1
                     indices.append(i)
-                    if self.save_mode == "subcorrelations":
+                    if self.save_mode == "full":
                         retained.append(xcorr)
                     # Save Sublen
                     if self.SaveSubLen:
@@ -179,10 +179,8 @@ class CorrelationForSublen(Correlation):
 
         stack = corr / numberCorr if numberCorr else numpy.full_like(corr, numpy.nan)
         fraction = float(numberCorr) / N if N else 0.0
-        if return_details:
-            subcorrelations = numpy.asarray(retained).reshape(-1, len(corr))
-            return stack, fraction, numberCorr, subcorrelations, numpy.asarray(indices, dtype=int)
-        return stack, fraction
+        subcorrelations = numpy.asarray(retained).reshape(-1, len(corr))
+        return stack, fraction, numberCorr, subcorrelations, numpy.asarray(indices, dtype=int)
 
 if __name__ == '__main__':
     #c=Correlation()

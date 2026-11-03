@@ -67,7 +67,6 @@ class generatorDatePathFileDictOfTraces(object):
             self.WindowStart = obspy.core.UTCDateTime(ns=kwargs['config']["window_start_ns"], precision=9)
             self.WindowEnd = obspy.core.UTCDateTime(ns=kwargs['config']["window_end_ns"], precision=9)
             self.WindowKey = kwargs['config']["window_key"]
-            self.NumberOfSubTrace = kwargs['config']["numberOfSubTrace"]
             # self.ListOfDates = ["{}/{:03d}".format(cur_year,cur_day)]
             
         except AttributeError:
@@ -183,7 +182,7 @@ class generatorPathSaveStationListFilesStationOneDay(generatorDateDictOfTracesOn
         for date, DictOfTracesOneDayOneCompo in genDateDictOfTracesOneComponent:
             for station in self.ListOfStations:
                 DirPathSave, FileSave = self.getNameDirAndFileSave(date, station)
-                if not os.path.isfile(DirPathSave + FileSave) or not os.path.isfile(DirPathSave + FileSave + ".coverage.npy"):
+                if not os.path.isfile(DirPathSave + FileSave):
                     if list(DictOfTracesOneDayOneCompo.keys()):
                         if station in DictOfTracesOneDayOneCompo:
                             ListFileStationCompoOneDayWithIndex = []
@@ -237,25 +236,19 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorPathSaveStationListFile
 
             self.Frequency, IndexLongestTrace = self.giveFrequenceAndIndexFromTheLongestTrace(date)
             if self.Frequency == 0:
-                yield (date, numpy.array([]), 0, DirPathSave, FileSave, station,
-                       numpy.full(self.NumberOfSubTrace, numpy.nan) if self.files_ignore else numpy.zeros(self.NumberOfSubTrace))
+                yield (date, numpy.array([]), 0, DirPathSave, FileSave, station)
                 continue
             self.DurationTraceSave = int(round(float(self.Frequency) * (self.WindowEnd - self.WindowStart)))
             self.TraceToTreated = numpy.zeros(self.DurationTraceSave, dtype='float')
-            self.DataCoverage = numpy.zeros(self.DurationTraceSave, dtype='float32')
             self.StationFullName = ""
             try:
                 self.__StartDateTimeTrace = self.makeArrayToTreatAndGiveStartTime(date)
             except Exception:
-                yield (date, numpy.array([]), self.Frequency, DirPathSave, FileSave, station,
-                       numpy.full(self.NumberOfSubTrace, numpy.nan))
+                yield (date, numpy.array([]), self.Frequency, DirPathSave, FileSave, station)
                 continue
             self.timeCorrectionTrace(station, date)
 
-            edges = numpy.linspace(0, len(self.DataCoverage), self.NumberOfSubTrace + 1, dtype=int)
-            coverage = numpy.asarray([self.DataCoverage[a:b].mean() if b > a else 0.0
-                                      for a, b in zip(edges[:-1], edges[1:])])
-            yield (date, self.TraceToTreated, self.Frequency, DirPathSave, FileSave, self.StationFullName, coverage)
+            yield (date, self.TraceToTreated, self.Frequency, DirPathSave, FileSave, self.StationFullName)
 
     def selectBestChannelCode(self):
         code_priority = ["HH","BH","MH","EH","LH","HL","BL","ML","EL","LL","SH","HN","BN","MN","EN","LN","SN"]
@@ -374,13 +367,6 @@ class generatorArrayBeTreatFrequenceAndPathSave(generatorPathSaveStationListFile
                                                             subStream.stats.channel)
 
                 IndexBeginTrace = int(round((subStream.stats.starttime - starttime) * self.Frequency))
-                begin = max(0, IndexBeginTrace)
-                end = min(self.DurationTraceSave, IndexBeginTrace + len(Trace))
-                if end > begin:
-                    if FrequenceTrace == self.Frequency:
-                        self.DataCoverage[begin:end] = numpy.isfinite(Trace[begin - IndexBeginTrace:end - IndexBeginTrace])
-                    else:
-                        self.DataCoverage[begin:end] = numpy.nan
                 #If trace have problem (check with the function checkTraceInfo), we put it aside
                 if self.__checkTraceInfo(infile, Trace, indexTrace, StationTrace, ComponentTrace, FrequenceTrace):
                     if IndexBeginTrace < 0:
