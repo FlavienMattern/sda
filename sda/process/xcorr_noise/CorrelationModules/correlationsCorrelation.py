@@ -21,7 +21,6 @@ Provide a classes in order to compute the correlation.
 from sda.process.xcorr_noise.CorrelationModules import correlationsExceptions
 import scipy.fftpack
 import numpy
-import os
 import scipy
 
 
@@ -46,9 +45,6 @@ class Correlation(object):
         self.getMaxlag(config)
         self.getLenTrace(config)
         self.getGoodNumber(config)
-        self.SaveSubLen = config["SaveSubLen"]
-        self.NewFrequence = config["NewFrequence"]
-        self.SaveDirectory = config["SaveDirectory"]
         self.save_mode = config.get("save_mode", "stack")
         
     def getMaxlag(self, config):
@@ -142,7 +138,7 @@ class CorrelationForSublen(Correlation):
         except (AttributeError, ValueError):
             raise correlationsExceptions.ErrorParamFromParamFile('GoodNumber')
         
-    def makeCorrelationSubLenStackWithNormalisationAndMaxlag(self, trace01, trace02, date, comp, sta1, sta2):
+    def makeCorrelationSubLenStackWithNormalisationAndMaxlag(self, trace01, trace02):
         corr = numpy.zeros(2*self.Maxlag+1, dtype='float')
         N = self.NumberSubLen*len(trace01)/self.LenTraceTotal
         numberCorr = 0
@@ -164,18 +160,6 @@ class CorrelationForSublen(Correlation):
                     indices.append(i)
                     if self.save_mode == "full":
                         retained.append(xcorr)
-                    # Save Sublen
-                    if self.SaveSubLen:
-                        ti = self.LenTrace*i * 1./self.NewFrequence
-                        tf = self.LenTrace*(i+1) * 1./self.NewFrequence
-                        folder = os.path.join(self.SaveDirectory[:-3], "CorrelationsSubLen", comp, f"{sta1}-{sta2}")
-                        try:
-                            os.makedirs(folder)
-                        except:
-                            pass
-                        filename = os.path.join(folder, f"{date}_{ti}-{tf}.npy")
-                        with open(filename, 'wb') as f:
-                            numpy.save(f, xcorr)
 
         stack = corr / numberCorr if numberCorr else numpy.full_like(corr, numpy.nan)
         fraction = float(numberCorr) / N if N else 0.0

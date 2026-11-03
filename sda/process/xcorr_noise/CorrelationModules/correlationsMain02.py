@@ -95,7 +95,6 @@ def makeCorrFromDirectoryTraces(config):
     for DirSave, FileSave, date, sta1, sta2 in generatorCouple:
 
         DirSave_split = DirSave.split(os.sep)
-        date_str = os.path.basename(FileSave).split(".")[0]
         comp = DirSave_split[-2]
         save_directory = config['SaveDirectory']
         
@@ -123,7 +122,7 @@ def makeCorrFromDirectoryTraces(config):
         corr = None
         if all(trace is not None for trace in traces):
             corr, perc, n_retained, subcorrelations, indices = correlation.makeCorrelationSubLenStackWithNormalisationAndMaxlag(
-                traces[0], traces[1], date_str, comp, sta1, sta2)
+                traces[0], traces[1])
             if config['save_mode'] == 'full':
                 corr = subcorrelations
             elif not n_retained or perc < config['minSubCorrKeep']:

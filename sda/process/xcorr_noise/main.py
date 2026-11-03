@@ -41,7 +41,6 @@ def xcorr_noise(
     divideFreq = 0.05, # Whitening : The percentage of the length of the apodization of each border in the frequency domain : Between 0 (0%) and 0.5 (50% of the window on each side, so 100%)
     lengthBorder = 100, # Not used
     HourFilter = (0, 24),
-    SaveSubLen = False,
     AutoCorr = True, # Do autocorr ? [ne marche pas, laisser en True sinon tout casse !!!]
     Maxlag = 120, # [s] Maximum absolute lagitme
     LenTrace = 86400, # [s] Length of Trace
@@ -87,7 +86,6 @@ def xcorr_noise(
         divideFreq (float, optional): Percentage for frequency domain apodization (0 to 0.5). Defaults to 0.05.
         lengthBorder (int, optional): Length of border for apodization (not used). Defaults to 100.
         HourFilter (tuple, optional): Tuple specifying the hour range for filtering (start, end). Defaults to (0, 24).
-        SaveSubLen (bool, optional): Legacy export of retained sub-correlations to separate NumPy files. Defaults to False. Use save_mode to choose the HDF5 output.
         AutoCorr (bool, optional): Whether to compute autocorrelation (must be True). Defaults to True.
         Maxlag (int, optional): Maximum absolute lag time in seconds. Defaults to 120.
         LenTrace (float, optional): Duration in seconds of consecutive, non-overlapping correlation intervals. Defaults to 86400. Incomplete final intervals are skipped.
@@ -95,7 +93,7 @@ def xcorr_noise(
         maxInterDistance (float, optional): Maximum inter-station distance for correlation. Defaults to None.
         savePreProcessing (bool, optional): Whether to save preprocessed data. Defaults to False.
         restricted_times (list or None, optional): List of restricted time intervals. Defaults to None.
-        save_mode (str, optional): "stack" (default) saves a stack over LenTrace; "full" saves every retained sub-correlation. Both modes record retained counts. SaveSubLen remains the separate legacy NumPy export option.
+        save_mode (str, optional): "stack" (default) saves a stack over LenTrace; "full" saves every retained sub-correlation. Both modes record retained counts.
 
     Returns:
         None
@@ -178,7 +176,6 @@ def xcorr_noise(
         "divideFreq" : divideFreq,
         "lengthBorder" : lengthBorder,
         "HourFilter" : HourFilter,
-        "SaveSubLen" : SaveSubLen,
         "AutoCorr" : AutoCorr,
         "Maxlag" : Maxlag,
         "LenTrace" : LenTrace,
