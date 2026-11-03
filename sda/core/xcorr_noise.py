@@ -22,12 +22,9 @@ def load_h5_corr(file_path, time=None):
         if "array" in f:
             xcorr = f["array"][:]
             lagtime = f["lagtime"][:]
-            times = pd.to_datetime(f["time"][:].astype(str))
-            frame = pd.DataFrame(xcorr.T, index=times, columns=lagtime)
-            frame = frame.reindex(pd.date_range(times.min(), times.max(), freq="D"))
-            xcorr, starts = frame.values.T, frame.index.asi8
+            starts = f["time"][:]
             metadata = dict(fs=float(f["fs"][()]), max_lag=float(np.max(np.abs(lagtime))),
-                            save_mode="stack", times_stack=frame.index.to_numpy(),
+                            save_mode="stack", times_stack=starts.astype("datetime64[ns]"),
                             n_retained=None, n_subwindows=None)
         else:
             metadata = dict(f["metadata"].attrs)
