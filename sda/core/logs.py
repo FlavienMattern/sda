@@ -2,7 +2,6 @@ import logging
 import logging.handlers
 from loky.backend import get_context
 import os
-import sys
 from datetime import datetime
 import __main__
 
@@ -15,19 +14,9 @@ _log_level = logging.INFO
 
 
 # Functions
-def _get_main_script_name():
-    main_script = os.path.basename(sys.argv[0])
-    return os.path.splitext(main_script)[0] or "main"
-
-
-def _listener_configurer(log_dir, log_name):
+def _listener_configurer(log_path):
     # Logfile initiation
-    os.makedirs(log_dir, exist_ok=True)
-    if log_name is None:
-        log_name = _get_main_script_name()
-        log_file = os.path.join(log_dir, f"{log_name}_{datetime.now():%Y-%m-%d_%H%M%S}.log")
-    else:
-        log_file = os.path.join(log_dir, log_name)
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
     msg = r"""
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓                                       
@@ -38,11 +27,11 @@ def _listener_configurer(log_dir, log_name):
     ┃                                                    ┃
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
-    with open(log_file, "a", encoding="utf-8") as f:
+    with open(log_path, "a", encoding="utf-8") as f:
         f.write(msg + "\n")
 
     root = logging.getLogger()
-    handler = logging.FileHandler(log_file, mode="a")
+    handler = logging.FileHandler(log_path, mode="a")
     formatter = logging.Formatter(
         "[%(asctime)s] [%(levelname)s] |%(processName)s| %(message)s"
     )
@@ -50,13 +39,13 @@ def _listener_configurer(log_dir, log_name):
     root.addHandler(handler)
     root.setLevel(_log_level)
     
-    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Start logging to: {log_file}")
+    print(f"{datetime.now().strftime('[%Y-%m-%d %H:%M:%S]')} Start logging to: {log_path}")
     logging.info(f"Start logging.")
 
 
-def _listener_process_main(queue, log_dir, log_name):
+def _listener_process_main(queue, log_path):
     # Logs recovery and writing
-    _listener_configurer(log_dir, log_name)
+    _listener_configurer(log_path)
     while True:
         record = queue.get()
         if record is None:
@@ -88,12 +77,16 @@ def init_worker_logging(queue, level):
     _log_initialized = True
 
 
-def start_logging(log_dir=None, log_name=None, level="INFO"):
+def start_logging(log_path=None, level="INFO"):
     """
     Initiate logging.
     
     Parameters :
     -----------
+    log_path : str or os.PathLike, optional
+        Log file or directory. New paths without an extension are directories.
+        Automatic filename: YYYY-MM-DD_hhmmss.log.
+        Default directory: logs beside the running file.
     level : str
         Logging level ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
     """
@@ -101,13 +94,20 @@ def start_logging(log_dir=None, log_name=None, level="INFO"):
     if _log_initialized:
         return
 
-    if log_dir is None:
-        try:
-            wdir = os.path.dirname(os.path.abspath(__main__.__file__))
-        except:
-            wdir = os.getcwd()
-        log_dir = os.path.join(wdir, "logs")
-        os.makedirs(log_dir, exist_ok=True)
+    main_script = (
+        getattr(__main__, "__file__", None)
+        or getattr(__main__, "__vsc_ipynb_file__", None)
+        or os.environ.get("JPY_SESSION_NAME")
+    )
+    if log_path is None:
+        if not main_script or not os.path.isabs(main_script):
+            raise ValueError("Cannot determine the script or notebook path. Specify log_path explicitly.")
+        wdir = os.path.dirname(main_script)
+        log_path = os.path.join(wdir, "logs")
+    log_path = os.fspath(log_path)
+    if os.path.isdir(log_path) or (not os.path.exists(log_path) and not os.path.splitext(os.path.basename(log_path))[1]):
+        log_path = os.path.join(log_path, f"{datetime.now():%Y-%m-%d_%H%M%S}.log")
+    log_path = os.path.abspath(log_path)
 
     level = level.upper()
     if not hasattr(logging, level):
@@ -117,7 +117,7 @@ def start_logging(log_dir=None, log_name=None, level="INFO"):
     context = get_context("loky")
     _log_queue = context.Queue()
     _listener_process = context.Process(
-        target=_listener_process_main, args=(_log_queue, log_dir, log_name), daemon=True
+        target=_listener_process_main, args=(_log_queue, log_path), daemon=True
     )
     _listener_process.start()
 
@@ -125,7 +125,6 @@ def start_logging(log_dir=None, log_name=None, level="INFO"):
     _worker_configurer()
 
     _log_initialized = True
-    main_script = getattr(__main__, "__file__", None)
     add_log(f"File executed: {os.path.abspath(main_script)}" if main_script else "Interactive session.", level="info")
 
 
