@@ -14,7 +14,8 @@ def main():
         script = os.path.join(streamlit_dir, "streamlit.py")
 
         os.chdir(streamlit_dir)
-        subprocess.run(["streamlit", "run", script] + args)
+        result = subprocess.run([sys.executable, "-P", "-m", "streamlit", "run", script] + args)
+        sys.exit(result.returncode)
     else:
         print(f"Unkown command: {cmd}")
         print(f"Possible commands: streamlit")

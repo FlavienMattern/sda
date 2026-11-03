@@ -1,4 +1,4 @@
-# Seismological Data Analysis (SDA)
+# Seismic Data Analysis (SDA)
 
 ## Documentation / Wiki
 You will find all the necessary documentation on the [Wiki page](https://git.unistra.fr/FlavienMattern/sda/-/wikis/Documentation).
@@ -6,11 +6,11 @@ You will find all the necessary documentation on the [Wiki page](https://git.uni
 ## Installation
 You can run the following commands to install all necessary packages :
 ```
-conda create --name sda python=3.9.18
+conda create --name sda python=3.14
 conda activate sda
 git clone git@github.com:FlavienMattern/sda.git
 cd sda
-pip install -e .
+python -m pip install -e .
 ```
 
 ## Contributors

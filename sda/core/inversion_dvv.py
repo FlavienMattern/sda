@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 import pandas as pd
 from contextlib import nullcontext
-import matplotlib.cm as cm
 import matplotlib.patches as patches
 from scipy.optimize import curve_fit
 
@@ -830,9 +829,9 @@ class Inversion:
                         ax.scatter(value, rms_plot, marker=symbols[idx], color=c, zorder=10)
                         
                         if idx == 0:
-                            axs[1].scatter(-1e3, 0, marker=symbols[idx], color=c, label=f"$\lambda = {lambda_list[ii]:.0f}$ km", zorder=10)
+                            axs[1].scatter(-1e3, 0, marker=symbols[idx], color=c, label=rf"$\lambda = {lambda_list[ii]:.0f}$ km", zorder=10)
                                     
-                    ax.scatter(-1e3, 0, marker=symbols[idx], c="black", label=f"$\sigma _m = {as_si(sigma)}$", zorder=10)
+                    ax.scatter(-1e3, 0, marker=symbols[idx], c="black", label=rf"$\sigma _m = {as_si(sigma)}$", zorder=10)
 
 
                 dx = max(values_list) - min(values_list)
@@ -959,7 +958,7 @@ class Inversion:
             return x, y, Rhalf
             
         else:  
-            cmap = cm.get_cmap('turbo_r', 20)
+            cmap = matplotlib.colormaps['turbo_r'].resampled(20)
                 
             fig, ax = plt.subplots(1,1,figsize=(6,6))
             ax.tick_params(direction="in", color="white", top=True, right=True)
@@ -1003,7 +1002,7 @@ class Inversion:
             stations.append((st_pairs[idx][1][0],st_pairs[idx][1][1]))
         stations = np.array(list(set(list(stations))))
 
-        cmap = cm.get_cmap('turbo', 20)
+        cmap = matplotlib.colormaps['turbo'].resampled(20)
 
         fig, ax = plt.subplots(1,1,figsize=(6,6))
         ax.tick_params(direction="in", color="white", top=True, right=True)
@@ -1060,9 +1059,9 @@ class Inversion:
         stations = np.array(list(set(list(stations))))
 
         if data_type == "velocity":
-            cmap = cm.get_cmap('coolwarm', 20)
+            cmap = matplotlib.colormaps['coolwarm'].resampled(20)
         else:
-            cmap = cm.get_cmap('Spectral', 20)
+            cmap = matplotlib.colormaps['Spectral'].resampled(20)
 
         fig, ax = plt.subplots(1,1,figsize=(6,6))
         ax.tick_params(direction="in", color="white", top=True, right=True)
@@ -1426,7 +1425,7 @@ class Inversion:
 
         vmin = 0
         vmax = np.nanmax(Rsum)
-        cmap = cm.get_cmap('turbo', 20)
+        cmap = matplotlib.colormaps['turbo'].resampled(20)
 
         fig, axs = plt.subplots(2, 2, figsize=(10,10))
         plt.subplots_adjust(hspace=0, wspace=0)

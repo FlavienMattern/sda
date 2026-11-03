@@ -1,37 +1,40 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "sda"
-version = "1.0.0"
-description = "Tools for seismological data analysis"
+version = "0.0.1"
+description = "Tools for seismic data analysis"
 authors = [
     { name = "Flavien Mattern" }
 ]
 readme = "README.md"
-requires-python = ">=3.9.18"
-license = { text = "MIT" }
+requires-python = ">=3.14"
+license = "MIT"
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
 ]
 
 dependencies = [
-    "numpy==1.23.5",
-    "scipy==1.13.0",
-    "obspy==1.4.0",
-    "geopandas==0.12.2",
-    "pandas==2.2.2",
-    "tqdm==4.66.2",
-    "geopy==2.4.1",
-    "streamlit==1.47.0",
-    "streamlit-elements==0.1.0",
-    "plotly==6.2.0",
-    "stqdm==0.0.5",
-    "h5py==3.14.0",
-    "torch==2.5.1",
-    "disba==0.6.1"
+    "numpy>=2.3.3,<3",
+    "scipy>=1.16.1,<2",
+    "obspy>=1.5,<2",
+    "geopandas>=1.1,<2",
+    "pandas>=2.3.3,<3",
+    "tqdm>=4.66.2,<5",
+    "geopy>=2.4.1,<3",
+    "h5py>=3.15,<4",
+    "matplotlib>=3.10.7,<4",
+    "streamlit>=1.50,<2",
+    "streamlit-elements>=0.1,<0.2",
+    "plotly>=6.2,<7",
+    "stqdm>=0.0.5,<1",
+    "pydeck>=0.9.1,<1",
+    "torch>=2.9,<3",
+    "disba>=0.7,<0.8",
+    "numba>=0.63,<1",
 ]
 
 [project.urls]
@@ -39,3 +42,6 @@ Homepage = "https://github.com/FlavienMattern/sda"
 
 [project.scripts]
 sda = "sda.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["sda*"]
