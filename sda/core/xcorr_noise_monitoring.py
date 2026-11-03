@@ -14,8 +14,7 @@ def load_h5_dvv(filename):
 
 
 def stack_to_dict(stack_group):
-    time = pd.Timestamp("1970-01-01") + pd.to_timedelta(np.asarray(stack_group["time"][:]), unit="D")
-    time = time.strftime("%Y-%m-%d").tolist()
+    time = stack_group["time"][:].astype("datetime64[ns]").astype(str)
     lag_bounds = np.asarray(stack_group["lag_bounds"][:], dtype=np.float32)
     lag_labels = [f"{lag_min:.2f}_{lag_max:.2f}s" for lag_min, lag_max in lag_bounds]
     components = [value.decode() if isinstance(value, bytes) else value for value in stack_group["components"][:]]
@@ -29,14 +28,15 @@ def stack_to_dict(stack_group):
             coherence = stack_group["coherence"][:, lag_idx, comp_idx].astype(np.float32)
             error = stack_group["error"][:, lag_idx, comp_idx].astype(np.float32)
 
-            if np.all(np.isnan(dvv)) and np.all(np.isnan(coherence)) and np.all(np.isnan(error)):
+            valid = np.isfinite(dvv)
+            if not valid.any():
                 continue
 
             result[comp][lag_label] = {
-                "time": time,
-                "dvv": dvv.tolist(),
-                "coherence": coherence.tolist(),
-                "error": error.tolist(),
+                "time": time[valid].tolist(),
+                "dvv": dvv[valid].tolist(),
+                "coherence": coherence[valid].tolist(),
+                "error": error[valid].tolist(),
             }
 
     return result
@@ -54,7 +54,7 @@ def save_dvv_results(h5_file, results):
     metadata_group.attrs["sta1"] = results["metadata"]["sta1"]
     metadata_group.attrs["sta2"] = results["metadata"]["sta2"]
     metadata_group.attrs["time_origin"] = str(time_origin)
-    metadata_group.attrs["time_units"] = "days"
+    metadata_group.attrs["time_units"] = "nanoseconds"
     metadata_group.attrs["lag_units"] = "seconds"
     metadata_group.attrs["matrix_order"] = "time,lag,component"
     metadata_group.attrs["storage"] = "float32"
@@ -170,7 +170,7 @@ def save_dvv_results(h5_file, results):
                     del frequency_group[stack]
                 stack_group = frequency_group.create_group(stack)
 
-                time_days = (np.array(time, dtype="datetime64[D]") - time_origin).astype(np.int32)
+                time_ns = np.array(time, dtype="datetime64[ns]").astype(np.int64)
                 lag_bounds = np.array(
                     [[float(value) for value in lag_label[:-1].split("_")] for lag_label in lag_labels],
                     dtype=np.float32,
@@ -180,12 +180,12 @@ def save_dvv_results(h5_file, results):
 
                 time_dataset = stack_group.create_dataset(
                     "time",
-                    data=time_days,
+                    data=time_ns,
                     compression="gzip",
                     compression_opts=9,
                     shuffle=True,
                 )
-                time_dataset.attrs["units"] = f"days since {time_origin}"
+                time_dataset.attrs["units"] = f"nanoseconds since {time_origin}"
 
                 lag_dataset = stack_group.create_dataset(
                     "lag_bounds",
@@ -245,7 +245,7 @@ class dvv_object:
             frequency = f"{frequency[0]:.3f}-{frequency[1]:.3f}Hz"
 
         if isinstance(stack, int):
-            stack = f"{stack:03d}days"
+            stack = f"stack_{stack}"
 
         if isinstance(lagtime, tuple) or isinstance(lagtime, list):
             lagtime = "_".join([f"{lag:.2f}" for lag in lagtime]) + "s"
@@ -403,9 +403,10 @@ def average_dvv(output_path, comps=["ZZ", "NN", "EE", "ZN", "ZE", "EZ", "NZ", "E
                         result = components[0]
                     else:
                         stack_components = pd.concat(components, axis=0, keys=range(len(components)))
-                        result = pd.DataFrame(index=components[0].index, columns=components[0].columns)
+                        times = stack_components.index.get_level_values(1).unique().sort_values()
+                        result = pd.DataFrame(index=times, columns=stack_components.columns)
 
-                        for col in components[0].columns:
+                        for col in stack_components.columns:
                             if col[-1] == "dvv":
                                 cc_col = col[:-1] + ("coherence",)
                                 dv_vals = stack_components[col].unstack(0)
@@ -418,7 +419,7 @@ def average_dvv(output_path, comps=["ZZ", "NN", "EE", "ZN", "ZE", "EZ", "NZ", "E
                     results["data"][method][freq][stack]["avg"] = {}
                     for lag_str in result.columns.get_level_values(0).unique().tolist():
                         results["data"][method][freq][stack]["avg"][lag_str] = {
-                            "time": result.index.strftime("%Y-%m-%d").tolist(),
+                            "time": result.index.to_numpy(dtype="datetime64[ns]").astype(str).tolist(),
                             "dvv": result[lag_str]["dvv"].tolist(),
                             "coherence": result[lag_str]["coherence"].tolist(),
                             "error": result[lag_str]["error"].tolist(),
