@@ -119,7 +119,7 @@ def makeTreatmentTraceAfterNewFrequence(Trace, Frequence, acorr, remove_response
     factorReplaceWithStd = config["factorReplaceWithStd"]
     Convergence = config["Convergence"]
 
-    if Convergence == True:
+    if Convergence == False:
         Trace = tracesFunctions.glitchCorrectionWithFactorStd(Trace, factorTestStd, numberOfStd, factorReplaceWithStd)
     else:
         Trace = tracesFunctions.glitchCorrectionWithFactorStdWithConvergence(Trace, factorTestStd, factorReplaceWithStd)
