@@ -44,7 +44,6 @@ def xcorr_noise(
     AutoCorr = True, # Do autocorr ? [ne marche pas, laisser en True sinon tout casse !!!]
     Maxlag = 120, # [s] Maximum absolute lagitme
     LenTrace = 86400, # [s] Length of Trace
-    # NumberSubLen = 12, # A enlever et à mettre égal à numberOfSubTrace dans le config dict en dessous (cf paramètre commenté l.96) !!!!!!!!!!!!!!!!!!!!!!!
     minSubCorrKeep = 0.8,
     maxInterDistance = None,
     savePreProcessing = False,
@@ -52,72 +51,129 @@ def xcorr_noise(
     save_mode = "stack"
 ):
     
-    """
-    Performs cross-correlation noise processing on seismic data. This function prepares and processes seismic waveform data for cross-correlation analysis, including optional preprocessing steps such as instrument response removal, frequency filtering, and data whitening. It supports parallel processing and various configuration options for customizing the cross-correlation workflow.
+    """Preprocess seismic waveforms and compute ambient-noise correlations.
+    Correlation functions are stored in HDF5 files at `<outputPath>/xcorr_noise/<component>/<sta1>-<sta2>.h5`.
+    Waveform paths and metadata must first be indexed with `scan_data`.
 
     Parameters:
-        outputPath (str): Path to the directory where output files will be saved.
-        starttime (datetime or str): UTC start, including an optional time of day.
-        endtime (datetime or str): Exclusive UTC end. A date-only string includes that entire day.
-        databasePath (str, optional): Path to the database file. Defaults to None.
-        DataPath (str, optional): Path to the waveform data. Defaults to None.
-        Components (list of str, optional): List of components to process (e.g., ["Z"]). Defaults to ["Z"].
-        CrossComponents (list of str, optional): List of cross-components for correlation (e.g., ["ZZ"]). Defaults to ["ZZ"].
-        stations (list, optional): List of station identifiers to include. Defaults to [] (all stations).
-        NumberOfProcesses (int, optional): Number of parallel processes to use. Defaults to 1.
-        doScan (bool, optional): Whether to scan and index available data. Defaults to True.
-        remove_response (bool, optional): Whether to remove instrument response. Defaults to True.
-        inventory_path (str, optional): Path to the station inventory file. Defaults to None.
-        water_level (float, optional): Water level for response removal. Defaults to 60.
-        response_prefilt (tuple, optional): Frequency pre-filter for response removal. Defaults to (0.05, 0.06, 7.0, 9.0).
-        NewFrequence (float, optional): Target sampling frequency after resampling. Defaults to 20.
-        numberOfSubTrace (int, optional): Number of sub-traces per trace for correlation. Defaults to 12.
-        freqMin (float, optional): Minimum frequency for filtering. Defaults to 1/10.
-        freqMax (float, optional): Maximum frequency for filtering. Defaults to 5.
-        freqmin (float, optional): Alternative minimum frequency for filtering. Defaults to 0.05.
-        factorTestStd (float, optional): Factor for standard deviation test. Defaults to 10.
-        numberOfStd (int, optional): Number of standard deviations for outlier detection. Defaults to 3.
-        factorReplaceWithStd (float, optional): Factor for replacing outliers with standard deviation. Defaults to 0.
-        Convergence (bool, optional): Whether to use convergence criteria. Defaults to False.
-        ratioZero (float, optional): Ratio threshold for zero values. Defaults to 0.9.
-        ratioE (float, optional): Ratio threshold for event detection. Defaults to 2.
-        do1bit (bool, optional): Whether to apply 1-bit normalization. Defaults to None.
-        factorTestStdSeisme (float, optional): Factor for seismic standard deviation test. Defaults to 2.
-        divideFreq (float, optional): Percentage for frequency domain apodization (0 to 0.5). Defaults to 0.05.
-        lengthBorder (int, optional): Length of border for apodization (not used). Defaults to 100.
-        HourFilter (tuple, optional): Tuple specifying the hour range for filtering (start, end). Defaults to (0, 24).
-        AutoCorr (bool, optional): Whether to compute autocorrelation (must be True). Defaults to True.
-        Maxlag (int, optional): Maximum absolute lag time in seconds. Defaults to 120.
-        LenTrace (float, optional): Duration in seconds of consecutive, non-overlapping correlation intervals. Defaults to 86400. Incomplete final intervals are skipped.
-        minSubCorrKeep (float, optional): Minimum fraction of retained sub-windows required to save a stack. Defaults to 0.8. Full mode saves every retained sub-correlation.
-        maxInterDistance (float, optional): Maximum inter-station distance for correlation. Defaults to None.
-        savePreProcessing (bool, optional): Whether to save preprocessed data. Defaults to False.
-        restricted_times (list or None, optional): List of restricted time intervals. Defaults to None.
-        save_mode (str, optional): "stack" (default) saves a stack over LenTrace; "full" saves every retained sub-correlation. Both modes record retained counts.
-
-    Returns:
-        None
+        outputPath (str): Project directory containing the dataset and database, and receiving
+            the `xcorr_noise` results directory.
+        starttime (str | UTCDateTime): UTC start, including a time of day if needed,
+            e.g. `"2023-01-01"`, `"2023-01-01T06:00:00"`.
+        endtime (str | UTCDateTime): UTC end, including a time of day if needed,
+            e.g. `"2023-01-02"`, `"2023-01-02T00:00:00"`.
+        databasePath (str | None): Existing SQLite database created by `scan_data`;
+            `None` uses `<outputPath>/database.db` (default location).
+        DataPath (str | None): Waveform directory supplied to preprocessing;
+            `None` uses `<outputPath>/data/waveforms`.
+        Components (list[str]): Waveform components to preprocess, e.g. `["Z"]`
+            or `["Z", "N", "E"]`.
+        CrossComponents (list[str]): Component pairs to correlate, e.g. `["ZZ"]`
+            or `["ZZ", "ZN", "NZ"]`. The first letter refers to the first station.
+        stations (list[str]): Station codes to include, e.g. `["ST01", "ST02"]`.
+            An empty list uses all stations.
+        NumberOfProcesses (int): Number of worker processes, distributed across `LenTrace`
+            intervals.
+        doScan (bool): Rebuild daily trace dictionaries from the existing SQLite index.
+            `False` reuses `<outputPath>/xcorr_noise/DictsOfTraces`; it does not index new files.
+        remove_response (bool): Remove the instrument response using StationXML metadata
+            during preprocessing.
+        inventory_path (str | None): Directory searched recursively for StationXML `.xml`
+            files; `None` uses `<outputPath>/data/inventory`. Needed for response removal
+            or an inter-station distance limit.
+        water_level (float | None): Water level in dB passed to ObsPy response removal;
+            `None` disables water-level stabilization. Used only with `remove_response=True`.
+        response_prefilt (tuple[float, float, float, float] | None): Four response-removal
+            taper corners in Hz, e.g. `(0.05, 0.06, 7.0, 9.0)`; `None` disables this pre-filter.
+        NewFrequence (float): Target sampling rate in Hz after resampling, e.g. `20`.
+        numberOfSubTrace (int): Number of equal sub-windows per `LenTrace` interval,
+            e.g. `12` gives two-hour sub-windows for a one-day interval.
+        freqMin (float): Lower frequency in Hz for spectral whitening (which also acts as a band-pass filter).
+        freqMax (float): Upper frequency in Hz for spectral whitening (which also acts as a band-pass filter).
+        freqmin (float): High-pass corner in Hz applied before glitch correction;
+            distinct from the whitening bound `freqMin`.
+        factorTestStd (float): Glitch threshold as a multiple of the trace standard
+            deviation, e.g. `10` detects samples above ten standard deviations.
+        numberOfStd (int): Number of glitch-correction passes when `Convergence=False`;
+            the standard deviation is recalculated at each pass.
+        factorReplaceWithStd (float): Replacement amplitude for glitches, as a multiple of
+            the current standard deviation, preserving sign. `0` replaces them with zeros.
+        Convergence (bool): Repeat glitch correction until stable, with an iteration limit.
+            When `False`, perform exactly `numberOfStd` passes.
+        ratioZero (float): Minimum fraction of samples with valid data (not gaps) for a sub-window to pass the coverage test; `0.9` requires 90%.
+        ratioE (float): Multiplier of the interval's estimated mean sub-window energy.
+            Sub-windows above this energy threshold are rejected.
+        do1bit (str | None): Apply sign normalization `"before_whiten"` or
+            `"after_whiten"`; `None` disables it.
+        factorTestStdSeisme (float): Amplitude-clipping factor applied after whitening,
+            relative to the sub-window standard deviation.
+        divideFreq (float): Fraction of the whitening bandwidth tapered at each edge,
+            e.g. `0.05` for 5% per edge. Use a value between `0` and `0.5`.
+        lengthBorder (int): Compatibility option; currently unused by preprocessing. To be removed in a future version.
+        HourFilter (tuple[float, float]): Accepted UTC hours. `(0, 24)` keeps all hours; `(22, 6)` spans midnight.
+        AutoCorr (bool): Compatibility option; currently ignored. Same-station pairs
+            are included regardless of this value. To be changed in a future version.
+        Maxlag (float): Maximum absolute correlation lag in seconds, e.g. `120` saves
+            the range from `-120` to `+120` seconds.
+        LenTrace (float): Length in seconds of each consecutive, non-overlapping processing
+            interval. The intervals start at `starttime`; an incomplete final interval is skipped.
+        minSubCorrKeep (float): Minimum fraction of retained sub-windows for a valid stack,
+            between `0` and `1`. Ignored when `save_mode="full"`.
+        maxInterDistance (float | None): Maximum station-pair distance in kilometers,
+            computed from the inventory. `None` applies no distance limit.
+        savePreProcessing (bool): Keep the preprocessed NumPy traces after correlation;
+            otherwise their temporary directories are removed.
+        restricted_times (list[tuple[str, str]] | None): Allowed UTC intervals. A sub-window
+            must fit entirely inside one interval, e.g.
+            `[("2023-01-01T00:00:00", "2023-01-01T06:00:00")]`.
+            `None` or an empty list applies no additional time restriction.
+        save_mode (str): `"stack"` saves the mean of retained sub-correlations per interval;
+            `"full"` saves every retained sub-correlation.
 
     Notes:
-        - This function is intended for batch processing of seismic noise cross-correlation.
-        - Some parameters are not currently used but are included for compatibility or future use.
-        - The function assumes that required directories and files exist or will be created as needed.
+        - Whitening is applied only to cross-correlations; it is replaced by a band-pass
+          filter for autocorrelations.
 
     Example:
+        Compute daily vertical-component correlations after indexing the dataset:
+
+        ```python
+        from sda.process import xcorr_noise
+
+        xcorr_noise(
+            outputPath="/path/to/output",
+            starttime="2023-01-01",
+            endtime="2023-01-03",
+            NumberOfProcesses=4,
+            inventory_path="/path/to/output/data/inventory",
+            remove_response=True,
+            doScan=True,
+            LenTrace=86400,
+            numberOfSubTrace=48,
+            Components=["Z"],
+            CrossComponents=["ZZ"],
+            stations=["ST01", "ST02"],
+
+        )
+        ```
+
+        Save individual five-minute correlations within hourly intervals:
+
         ```python
         xcorr_noise(
             outputPath="/path/to/output",
             starttime="2023-01-01T00:00:00",
-            endtime="2023-01-02T00:00:00",
-            databasePath="/path/to/database.db",
-            DataPath="/path/to/data",
+            endtime="2023-01-03T00:00:00",
+            NumberOfProcesses=4,
+            inventory_path="/path/to/output/data/inventory",
+            remove_response=True,
+            doScan=True,
+            LenTrace=3600,
+            numberOfSubTrace=12,
             Components=["Z"],
             CrossComponents=["ZZ"],
             stations=["ST01", "ST02"],
-            NumberOfProcesses=4,
-            doScan=True,
-            remove_response=True,
-            inventory_path="/path/to/inventory.xml"
+            save_mode="full",
         )
         ```
     """

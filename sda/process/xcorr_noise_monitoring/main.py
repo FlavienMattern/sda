@@ -295,6 +295,107 @@ def xcorr_noise_monitoring(
     DoubletWindowStep = 5
 ):
     
+    """Estimate relative seismic velocity changes from post-processed noise correlations.
+    Compare each selected correlation with a reference using stretching and/or
+    moving-window cross-spectral analysis (MWCS). dv/v, coherence and errors are
+    saved to `<outputPath>/xcorr_noise_monitoring/<sta1>-<sta2>.h5`.
+
+    Parameters:
+        outputPath (str): Project directory containing outputs from `xcorr_noise_postprocessing`.
+        starttime (str | UTCDateTime): UTC start for selecting correlation
+            timestamps to monitor, e.g. `"2023-02-01"`, `"2023-02-01T15:00:00"`.
+        endtime (str | UTCDateTime): UTC end for selecting correlation
+            timestamps to monitor, e.g. `"2023-02-02"`, `"2023-02-02T00:00:00"`.
+        NumberOfProcesses (int): Required number of worker processes, distributed across
+            station pairs, e.g. `4`.
+        refstarttime (str | UTCDateTime | None): UTC start of the reference period.
+            If set to `None`, consider all available correlations during the monitoring period.
+        refendtime (str | UTCDateTime | None): UTC end of the reference period.
+            If set to `None`, consider all available correlations during the monitoring period.
+        StackCount (int): Select an existing `stack_<StackCount>` from `xcorr_noise_postprocessing`,
+            e.g. `10` reads `stack_10`. This function does not create stacks.
+        stations (list[str]): Station codes to include, e.g. `["ST01", "ST02"]`.
+            An empty list considers all available stations.
+        inventory_path (str | None): Directory searched recursively for StationXML `.xml`
+            files; `None` uses `<outputPath>/data/inventory`. Required for rotation,
+            velocity-based lag windows or distance filtering.
+        freqMinMonitoring (float): Lower band-pass corner in Hz for correlation functions.
+        freqMaxMonitoring (float): Upper band-pass corner in Hz for correlation functions.
+        RotationComponents (list[str] | None): Components to retain or rotate into,
+            e.g. `["ZZ", "RR", "TT"]`. Horizontal rotation requires `NN`, `NE`, `EN`, `EE`.
+            `None` or `[]` skips rotation and keeps all available ZNE component pairs.
+        LagtimeMonitoring (list[tuple[float, float]]): Manual lag windows in seconds,
+            e.g. `[(-40, -10), (10, 40)]`. Used when `LagtimeVelocity=0`.
+        LagtimeVelocity (float | list[float]): Propagation speed in km/s for automatic windows:
+            their start is `distance / velocity + LagtimeShift`, clipped to zero.
+            `0` uses manual windows; a list defines several automatic windows.
+        LagtimeShift (float | list[float]): Offset in seconds added to each automatic window
+            start. For a velocity list, provide a matching list; a zero velocity uses the shift alone.
+        LagtimeWindowLength (float | list[float]): Duration in seconds of each automatic lag
+            window. For a velocity list, provide a matching list of durations.
+        LagtimeSide (str | None): Side of automatic windows: `"causal"`, `"acausal"`,
+            `"both"` or `"fold"`; `None` uses positive lags. `"fold"` also averages
+            positive and mirrored negative lags before measurement, including with manual windows.
+        maxInterDistance (float | None): Maximum station-pair distance in kilometers,
+            computed from the inventory. `None` applies no distance limit.
+        doStretching (bool): Estimate dv/v using the stretching method.
+        StretchingMax (float): Absolute bound of the stretching search,
+            e.g. `0.06` searches from -6% to +6% velocity change. Used only with `doStretching=True`.
+        StretchingNbTrial (int): Number of trial stretching factors. Used only with `doStretching=True`.
+        doDoublet (bool): Estimate dv/v using the MWCS method.
+        DoubletWindowLength (float): Sliding MWCS window duration in seconds;
+            used only with `doDoublet=True`.
+        DoubletWindowStep (float): Step in seconds between successive MWCS windows;
+            used only with `doDoublet=True`.
+
+    Notes:
+        - Run `xcorr_noise_postprocessing` first.
+        - Saved dv/v values and their errors are percentages, not fractions.
+
+    Example:
+        Measure stretching relative to a fixed reference period and fixed lag windows:
+
+        ```python
+        from sda.process import xcorr_noise_monitoring
+
+        xcorr_noise_monitoring(
+            outputPath="/path/to/output",
+            starttime="2023-01-01",
+            endtime="2024-01-01",
+            NumberOfProcesses=4,
+            refstarttime="2023-01-01",
+            refendtime="2023-03-01",
+            RotationComponents=None,
+            LagtimeMonitoring=[(-40, -10), (10, 40)],
+            StretchingMax=0.03,
+        )
+        ```
+
+        Measure stretching relative to a full reference period for data stacked over 10 time steps, using automatic lag windows based on interstation distance and velocity:
+
+        ```python
+        xcorr_noise_monitoring(
+            outputPath="/path/to/output",
+            starttime="2023-01-01",
+            endtime="2024-01-01",
+            NumberOfProcesses=4,
+            StackCount=10,
+            inventory_path="/path/to/output/data/inventory",
+            RotationComponents=None,
+            LagtimeVelocity=[1.0, 1.0],
+            LagtimeShift=[10, 10],
+            LagtimeWindowLength=[20, 20],
+            LagtimeSide="both",
+            doStretching=True,
+            StretchingMax = 0.1,
+            StretchingNbTrial = 70,
+            doDoublet=True,
+            DoubletWindowLength=5,
+            DoubletWindowStep=2,
+        )
+        ```
+    """
+
     add_log("#"*50, level="info")
     add_log("Start process: xcorr_noise_monitoring", level="info")
     

@@ -77,82 +77,117 @@ def download_data(
         print_report=True
         
     ):
-    """Download seismic data from using ObsPy's MassDownloader. This function downloads waveform data and station metadata for a specified geographical domain and time period from various seismic data providers.
+    """Download seismic waveforms and StationXML metadata with ObsPy's MassDownloader.
+    Most parameters are passed directly to MassDownloader;
+    see the [ObsPy usage examples](https://docs.obspy.org/packages/autogen/obspy.clients.fdsn.mass_downloader.html#usage-examples)
+    for more details.
+    Waveforms and inventories are stored under `<dataPath>/waveforms` and
+    `<dataPath>/inventory`, unless custom paths are provided.
 
     Parameters:
-        outputPath (str): Path to the main output directory where data will be stored.
-        dataPath (str, optional): Path to the dataset directory. If `None`, defaults to `<outputPath>/data`.
-        domainType (str, optional): Type of geographical domain. Options: `"rectangular"`, `"circular"`, `"global"`. Default is `"rectangular"`.
-        latitudes (tuple, optional): `(latmin, latmax)` - Minimum and maximum latitude for rectangular domain.
-        longitudes (tuple, optional): `(lonmin, lonmax)` - Minimum and maximum longitude for rectangular domain.
-        latitude (float, optional): Center latitude for circular domain.
-        longitude (float, optional): Center longitude for circular domain.
-        minradius (float, optional): Minimum distance from center of circular domain (in km).
-        maxradius (float, optional): Maximum distance from center of circular domain (in km).
-        starttime (str | UTCDateTime): Start time for data download.
-        endtime (str | UTCDateTime): End time for data download.
-        station_starttime (str | UTCDateTime, optional): Stations must have been operational at or before this time.
-        station_endtime (str | UTCDateTime, optional): Stations must have been operational at or after this time.
-        chunklength_in_sec (float, optional): Length of one chunk (i.e., one file) in seconds for splitting downloads.
-        network (str, optional): Network code(s) to download (e.g., `"IU"` or `"IU,G*"`).
-        station (str, optional): Station code(s) to download (e.g., `"ANMO"` or `"A*"`).
-        location (str, optional): Location code(s) to download (e.g., `"00"`, `"00,01,10"`).
-        channel (str, optional): Channel code(s) to download (e.g., `"BHZ"` or `"BH*"`).
-        exclude_networks (tuple, optional): Network codes to exclude from download (e.g., `["BW", "GR"]`, `["F*", "G?"]`).
-        exclude_stations (tuple, optional): Station codes to exclude from download (e.g., `["AL??", "*O"]`, `["STR", "W*"]`).
-        limit_stations_to_inventory (Inventory, optional): If provided, only stations in this inventory will be downloaded. All other restrictions still apply, this just serves to further limit the set of stations to download.
-        reject_channels_with_gaps (bool, optional): Reject channels that have gaps or overlaps. Default is `True`.
-        minimum_length (float, optional): Minimum length of trace as fraction of requested time span (0.0-1.0). Default is `0.9`.
-        sanitize (bool, optional): Ensure stations are sufficiently separated and clean metadata. Default is `True`.
-        minimum_interstation_distance_in_m (float, optional): Minimum distance between stations in meters when `sanitize=True`. Default is `1000`.
-        channel_priorities (tuple, optional): Priority order for channel selection when multiple options exist. Default is `("HH[ZNE12]", "BH[ZNE12]", ...)`.
-        location_priorities (tuple, optional): Priority order for location codes when multiple options exist. Default is `("", "00", "10", ...)`.
-        providers (list, optional): List of data providers (e.g., `["RESIF", "IRIS"]`). If `None`, all known providers are considered. Can also be a list of manually configured FDSN clients.
-        debug (bool, optional): Enable debug mode for detailed logging. Default is `False`.
-        configure_logging (bool, optional): Configure logging for the MassDownloader. Default is `True`.
-        mseed_storage (str | callable, optional): Path template or function for storing miniSEED files. If `None`, uses default storage pattern via `get_mseed_storage()`.
-        stationxml_storage (str, optional): Path template for storing StationXML files. If `None`, defaults to `<dataPath>/inventory/{network}/{station}.xml`.
-        download_chunk_size_in_mb (int, optional): Size of download chunks in megabytes. Default is `20`.
-        threads_per_client (int, optional): Number of parallel download threads per client. Default is `3`.
-        print_report (bool, optional): Print download report upon completion. Default is `True`.
-    
-    Returns:
-        `None`
+        outputPath (str): Project output directory, created if necessary.
+        dataPath (str | None): Dataset directory; `None` uses `<outputPath>/data`.
+        domainType (str): Geographic selection: `"rectangular"`, `"circular"` or `"global"`.
+        latitudes (tuple[float, float]): Latitude bounds in degrees for a rectangular domain,
+            e.g. `(40.0, 45.0)`.
+        longitudes (tuple[float, float]): Longitude bounds in degrees for a rectangular domain,
+            e.g. `(-120.0, -115.0)`.
+        latitude (float | None): Center latitude in degrees for a circular domain.
+        longitude (float | None): Center longitude in degrees for a circular domain.
+        minradius (float | None): Inner radius of a circular domain, in angular degrees,
+            e.g. `0.0`. Required for a circular domain.
+        maxradius (float | None): Outer radius of a circular domain, in angular degrees,
+            e.g. `1.0`. Required for a circular domain.
+        starttime (str | UTCDateTime): UTC start of the waveform request,
+            e.g. `"2023-01-01T00:00:00"`. Must be provided for a defined request period.
+        endtime (str | UTCDateTime): UTC end of the waveform request,
+            e.g. `"2023-01-02T00:00:00"`. Must be provided for a defined request period.
+        station_starttime (str | UTCDateTime | None): Start of the StationXML metadata period;
+            `None` uses `starttime`. May extend earlier than the waveform request.
+        station_endtime (str | UTCDateTime | None): End of the StationXML metadata period;
+            `None` uses `endtime`. May extend later than the waveform request.
+        chunklength_in_sec (float | None): Duration of each download segment in seconds,
+            e.g. `86400` for daily files. `None` requests the whole period as one segment.
+        network (str | None): FDSN network selector, e.g. `"IU"` or `"IU,G*"`;
+            `None` leaves networks unrestricted.
+        station (str | None): FDSN station selector, e.g. `"ANMO"` or `"A*"`;
+            `None` leaves stations unrestricted.
+        location (str | None): FDSN location selector, e.g. `"00"` or `"00,10"`;
+            `None` uses `location_priorities`.
+        channel (str | None): FDSN channel selector, e.g. `"BHZ"` or `"BH*"`;
+            `None` uses `channel_priorities`.
+        exclude_networks (tuple[str, ...] | list[str]): Network patterns to exclude,
+            e.g. `["BW", "G*"]`. An empty sequence excludes none.
+        exclude_stations (tuple[str, ...] | list[str]): Station patterns to exclude,
+            e.g. `["STR", "AL??"]`. An empty sequence excludes none.
+        limit_stations_to_inventory (Inventory | None): Restrict downloads to stations in this
+            ObsPy inventory, while keeping all other selection criteria.
+        reject_channels_with_gaps (bool): Reject downloaded waveform files containing gaps
+            or overlaps.
+        minimum_length (float): Minimum accepted data coverage as a fraction of the requested
+            segment, between `0` and `1`; `0.9` requires at least 90% coverage.
+        sanitize (bool): Delete downloaded waveform files that have no associated StationXML
+            metadata.
+        minimum_interstation_distance_in_m (float): Minimum separation in meters between
+            newly selected and already selected stations, also used to detect duplicates.
+        channel_priorities (tuple[str, ...] | list[str]): Preferred channel patterns, in order,
+            e.g. `["HH[ZNE]", "BH[ZNE]"]`. Ignored when `channel` is set.
+        location_priorities (tuple[str, ...] | list[str]): Preferred location codes, in order,
+            e.g. `["", "00", "10"]`. Ignored when `location` is set.
+        providers (list[str | Client] | None): FDSN provider names, service URLs or configured
+            ObsPy clients, e.g. `["RESIF"]`. `None` tries all providers known to ObsPy.
+        debug (bool): Enable detailed MassDownloader logging.
+        configure_logging (bool): Let MassDownloader configure its console logger.
+        mseed_storage (str | callable | None): Waveform storage template.
+            `None` uses `<dataPath>/waveforms/NET/STA/NET.STA.LOC.CHA/YYYY-MM-DD.mseed`.
+        stationxml_storage (str | callable | None): StationXML storage template.
+            `None` uses `<dataPath>/inventory/{network}/{station}.xml`.
+        download_chunk_size_in_mb (float): Target size in megabytes of each bundled waveform
+            download request; distinct from the time segmentation above.
+        threads_per_client (int): Number of simultaneous waveform download threads per provider.
+        print_report (bool): Print the MassDownloader summary after downloading.
 
     Notes:
-        - Creates output directories if they don't exist.
-        - Uses ObsPy's MassDownloader for parallel downloads from multiple providers.
-        - Supports rectangular, circular, and global domain selections.
-        - Automatically handles channel and location code prioritization.
-        - The `mseed_storage` can be either a string path template or a callable function that returns storage paths.
+        - Existing waveform paths are skipped by the default storage template.
+        - This function writes files (waveforms and metadata) and does not return a dataset object.
 
     Example:
+        Download daily vertical-component files for a rectangular region:
+
         ```python
-                from sda.process import download_data
-                
-                # Download data for a rectangular region
-                download_data(
-                    outputPath="/path/to/output",
-                    domainType="rectangular",
-                    latitudes=(40.0, 45.0),
-                    longitudes=(-120.0, -115.0),
-                    starttime="2023-01-01",
-                    endtime="2023-01-02",
-                    network="TA",
-                    channel="BHZ"
-                )
-                
-                # Download data for a circular region around a point
-                download_data(
-                    outputPath="/path/to/output",
-                    domainType="circular",
-                    latitude=35.0,
-                    longitude=-118.0,
-                    minradius=0,
-                    maxradius=100,
-                    starttime="2023-01-01",
-                    endtime="2023-01-02"
-                )
+        from sda.process import download_data
+
+        download_data(
+            outputPath="/path/to/output",
+            domainType="rectangular",
+            latitudes=(40.0, 45.0),
+            longitudes=(-120.0, -115.0),
+            starttime="2023-01-01T00:00:00",
+            endtime="2023-01-03T00:00:00",
+            chunklength_in_sec=86400,
+            network="TA",
+            channel="BHZ",
+        )
+        ```
+
+        Select stations within one degree of a point:
+
+        ```python
+        from sda.process import download_data
+
+        download_data(
+            outputPath="/path/to/output",
+            domainType="circular",
+            latitude=48.58,
+            longitude=7.75,
+            minradius=0.0,
+            maxradius=1.0,
+            starttime="2023-01-01T00:00:00",
+            endtime="2023-01-02T00:00:00",
+            chunklength_in_sec=86400,
+            providers=["RESIF"],
+            channel="HHZ",
+        )
         ```
     """
 

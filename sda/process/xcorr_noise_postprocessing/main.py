@@ -64,6 +64,62 @@ def xcorr_noise_postprocessing(
     StackOverlap = 0,
 ):
 
+    """Denoise correlation functions using an SVD-Wiener filter and/or stack correlation functions.
+    Read outputs from `<outputPath>/xcorr_noise` and write HDF5 stacks to
+    `<outputPath>/xcorr_noise_postprocessing/stack_<StackCount>/<component>/<sta1>-<sta2>.h5`.
+
+    Parameters:
+        outputPath (str): Project directory containing the `xcorr_noise` outputs.
+        starttime (str | UTCDateTime): UTC start for selecting correlation
+            timestamps to monitor, e.g. `"2023-02-01"`, `"2023-02-01T15:00:00"`.
+        endtime (str | UTCDateTime): UTC end for selecting correlation
+            timestamps to monitor, e.g. `"2023-02-02"`, `"2023-02-02T00:00:00"`.
+        NumberOfProcesses (int): Number of worker processes, distributed across station pairs.
+        stations (list[str]): Station codes to include, e.g. `["ST01", "ST02"]`.
+            An empty list considers all available stations.
+        doSVDWiener (bool): Apply an SVD-Wiener filter.
+        SVDThreshold (int): Number of singular components to retain. Used with `doSVDWiener=True`.
+        WienerFiltTime (int): Wiener window size along the time axis, in time steps.
+            Used only with `doSVDWiener=True`.
+        WienerFiltLagTime (int): Wiener window size along the lag axis, in samples.
+            Used only with `doSVDWiener=True`.
+        StackCount (int): Number of consecutive correlation records per stack, e.g. `10`.
+            `1` does not apply stacking.
+        StackOverlap (float): Overlap fraction between successive groups, between `0` and `1`.
+            `0` gives disjoint groups; `0.5` gives half overlap.
+
+    Example:
+        Stack correlation functions over ten time steps, with no overlap between groups:
+
+        ```python
+        from sda.process import xcorr_noise_postprocessing
+
+        xcorr_noise_postprocessing(
+            outputPath="/path/to/output",
+            starttime="2023-01-01",
+            endtime="2023-02-01",
+            NumberOfProcesses=4,
+            StackCount=10,
+            StackOverlap=0,
+        )
+        ```
+
+        Apply an SVD-Wiener filter without any stacking:
+
+        ```python
+        xcorr_noise_postprocessing(
+            outputPath="/path/to/output",
+            starttime="2023-01-01",
+            endtime="2023-04-01",
+            NumberOfProcesses=4,
+            doSVDWiener=True,
+            SVDThreshold=5,
+            WienerFiltTime=5,
+            WienerFiltLagTime=5,
+        )
+        ```
+    """
+
     add_log("#"*50, level="info")
     add_log("Start process: xcorr_noise_postprocessing", level="info")
     SaveDirectory = os.path.join(outputPath, "xcorr_noise")

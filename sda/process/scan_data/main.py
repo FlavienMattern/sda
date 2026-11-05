@@ -105,26 +105,41 @@ def all_files_in_db(db_path):
 
 # Fonction principale pour traiter les fichiers en parallèle
 def scan_data(outputPath, dataPath=None, databasePath=None, overwrite=True, NumberOfProcesses=1, chunk_size=100):
-    """This step will scan all files in the dataset and create a sqlite3 database with all metadata inside.
+    """Index waveform file headers in a SQLite database by recursively scanning the dataset,
+    skipping XML files, and storing one metadata record per waveform file.
 
     Parameters:
-        outputPath (str): Output folder where all results will be saved.
-        dataPath (str, optional): Folder where all the dataset is saved. You don't need to specify it was collected by [`download_data()`][sda.process.download_data] at previous step.
-        databasePath (str, optional): Database file path. By default (`None`), the database file is placed at `<outputPath>/database.db`.
-        overwrite (bool, optional): Overwrite the database if exists.
-        NumberOfProcesses (int, optional): Number of workers to scan the dataset in parallel. Use it if your disk has good performances (instead it could lead to IO-Bound issues).
-        chunk_size (int, optional): Metadata are inserted to the database by chunks of `chunk_size` elements. This prevent large amount of access to the database.
-    
-    Returns:
-        `None`
+        outputPath (str): Project output directory, created if necessary.
+        dataPath (str | None): Dataset directory to scan; `None` uses `<outputPath>/data`,
+            the default dataset location used by `download_data`.
+        databasePath (str | None): SQLite database file; `None` uses
+            `<outputPath>/database.db`. Missing parent directories are created.
+        overwrite (bool): Delete and rebuild the database when `True`. When `False`,
+            keep existing records, add new ones and remove records for files no longer present.
+        NumberOfProcesses (int): Not used anymore. To be removed in future versions.
+        chunk_size (int): Number of readable files buffered before each database insert, e.g. `100`.
 
     Notes:
-        - `NumberOfProcesses` is not used in the current version of the code, but it is intended to be working in the future.
+        - Each record contains the absolute file path, station/channel identifiers,
+          sampling information and time coverage.
+        - With `overwrite=False`, detecting any new file currently triggers a scan of
+          all files, which can duplicate existing records. Use `overwrite=True` for a
+          clean rebuild, including after changing files without changing their paths.
+          This will be corrected in a future version.
 
     Example:
+        Index a dataset downloaded into the default directory (with `download_data`):
+
         ```python
         from sda.process import scan_data
-        scan_data(output_path="/path/to/output", dataPath="/path/to/data")
+
+        scan_data(outputPath="/path/to/output")
+        ```
+
+        Index a dataset downloaded from custom directories:
+
+        ```python
+        scan_data(outputPath="/path/to/output", dataPath="/path/to/waveforms")
         ```
     """
 
