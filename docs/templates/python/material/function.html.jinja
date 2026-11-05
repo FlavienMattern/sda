@@ -1,0 +1,18 @@
+{% extends "_base/function.html.jinja" %}
+
+{# Keep the native docstring and source blocks, including their section order. #}
+{% block signature scoped %}
+  {% if config.separate_signature and config.show_signature %}
+    {% set required_count = function.parameters|selectattr('required')|list|length %}
+    {% set optional_count = function.parameters|length - required_count %}
+    <div class="api-call">
+      <div class="api-call-header">
+        <span>Call signature</span>
+        <span>{{ required_count }} required{% if optional_count %} · {{ optional_count }} optional{% endif %}</span>
+      </div>
+      {{ super() }}
+    </div>
+  {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock signature %}

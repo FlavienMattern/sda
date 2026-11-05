@@ -1,0 +1,43 @@
+{% extends "_base/docstring/parameters.html.jinja" %}
+
+{% block table_style scoped %}
+  <section class="api-parameters" id="{{ html_id }}--parameters" aria-labelledby="{{ html_id }}--parameters-title">
+    <div class="api-parameters-header">
+      <h{{ heading_level + 1 }} id="{{ html_id }}--parameters-title">{{ (section.title or lang.t('Parameters:')).rstrip(':') }} <span class="api-count">{{ section.value|length }}</span></h{{ heading_level + 1 }}>
+      <label class="api-parameter-search" hidden>
+        <span class="api-search-label">Find a parameter</span>
+        <input type="search" placeholder="Filter parameters…" aria-label="Filter {{ function.name if function is defined else html_id }} parameters" autocomplete="off" spellcheck="false">
+      </label>
+    </div>
+    <dl class="api-parameter-list">
+      {% for parameter in section.value %}
+        <div class="api-parameter" id="{{ html_id }}--param-{{ parameter.name }}">
+          <dt>
+            <a class="api-parameter-name" href="#{{ html_id }}--param-{{ parameter.name }}"><code>{{ parameter.name }}</code></a>
+            {% if parameter.annotation %}
+              <span class="api-parameter-type">
+                {% with expression = parameter.annotation, backlink_type = 'used-by' %}
+                  <code>{% include "expression.html.jinja" with context %}</code>
+                {% endwith %}
+              </span>
+            {% endif %}
+          </dt>
+          <dd>
+            <span class="api-parameter-default{% if parameter.default is none %} api-required{% endif %}">
+              {% if parameter.default is not none %}
+                Default:
+                {% with expression = parameter.default, backlink_type = 'used-by' %}
+                  <code>{% include "expression.html.jinja" with context %}</code>
+                {% endwith %}
+              {% else %}
+                Required
+              {% endif %}
+            </span>
+            <div class="doc-md-description">{{ parameter.description|convert_markdown(heading_level + 1, html_id, autoref_hook=autoref_hook) }}</div>
+          </dd>
+        </div>
+      {% endfor %}
+    </dl>
+    <p class="api-filter-status" role="status" aria-live="polite" hidden></p>
+  </section>
+{% endblock table_style %}

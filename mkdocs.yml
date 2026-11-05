@@ -45,21 +45,23 @@ theme:
     - toc.integrate
     - search.suggest
     - search.highlight
+    - content.code.copy
 
 plugins:
   - search
   - mkdocstrings:
       default_handler: python
+      custom_templates: docs/templates
       handlers:
         python:
           options:
             show_source: true
             show_root_toc_entry: false
+            show_root_full_path: false
+            separate_signature: true
+            show_signature: true
             docstring_style: google
             merge_init_into_class: true
-            extra:
-              show_signature: true
-              show_docstring: true
 
 markdown_extensions:
   - pymdownx.highlight
@@ -67,6 +69,13 @@ markdown_extensions:
 
 extra_css:
   - styles/style.css
+
+extra_javascript:
+  - scripts/api.js
+
+# Templates are build inputs, not downloadable documentation assets.
+exclude_docs: |
+  /templates/
 
 nav:
   - Home: index.md
